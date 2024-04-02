@@ -34,13 +34,13 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Jobs
-Route::resource('/', JobsController::class)->only([
-    'index', 'show',
-]);
+//User Jobs
+Route::get('/', [JobsController::class, 'indexShow']);
+Route::get('/jobs/{job}', [JobsController::class, 'showJob']);
 
 Route::get('/jobs/search', [JobsController::class, 'search']);
 
+//Auth
 Route::post('employer/register', [EmployerRegisterController::class, 'employerRegister']);
 Route::post('login', [AuthController::class, 'login']);
 Route::post('register', [AuthController::class, 'register']);
@@ -63,7 +63,7 @@ Route::middleware('auth:sanctum')->group(function () {
     //Apply
 
     Route::post('/jobs/{id}/apply', [JobsController::class, 'apply']);
-    Route::get('/jobs/viewAppliedJobs', [JobsController::class, 'applicant']);
+    Route::get('/job/viewAppliedJobs', [JobsController::class, 'applicant']);
 
     //Jobs
     Route::resource('job', JobsController::class);
@@ -85,7 +85,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //Admin
     Route::resource('Admin/jobTypes', Job_typesController::class);
-    Route::resource('Admin/experienceLevel', experience_levelController::class);
     Route::resource('Admin/locations', LocationsController::class);
     Route::resource('Admin/country', CountriesController::class);
     Route::resource('Admin/companyType', CompanytypesController::class);

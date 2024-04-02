@@ -29,7 +29,7 @@ class Job extends Model
     }
     public function city()  : \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(City::class,'city_id','id');
+        return $this->hasMany(City::class,'id','id');
     }
 
 //    public function checkSaved(){

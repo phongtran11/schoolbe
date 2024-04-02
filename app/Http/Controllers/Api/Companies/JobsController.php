@@ -17,33 +17,48 @@ class JobsController extends Controller
      */
     public function index()
     {
-        $jobs = Job::with('jobtype', 'skill', 'Company')->paginate(5);
+        // Lấy người dùng hiện tại
+        $user = auth()->user();
 
-        $jobsData = $jobs->map(function ($job) {
-            return [
-                'id' => $job->id,
-                'title' => $job->title,
-                'company' => $job->company ? $job->company->name : null,
-                'salary' => $job->salary,
-                'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
-                'skills' => $job->skill->pluck('name')->toArray(),
-                'address' => $job->address,
-                'last_date' => $job->last_date,
-                'created_at' => $job->created_at->diffForHumans(),
-            ];
-        });
+        // Kiểm tra xem người dùng có một công ty không
+        if ($user->companies) {
+            // Lấy danh sách công việc của công ty của người dùng hiện tại
+            $jobs = $user->companies->jobs()->paginate(5);
 
+            // Chuyển đổi dữ liệu công việc thành định dạng mong muốn
+            $jobsData = $jobs->map(function ($job) {
+                return [
+                    'id' => $job->id,
+                    'title' => $job->title,
+                    'company' => $job->company ? $job->company->name : null,
+                    'salary' => $job->salary,
+                    'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
+                    'skills' => $job->skill->pluck('name')->toArray(),
+                    'address' => $job->address,
+                    'last_date' => $job->last_date,
+                    'created_at' => $job->created_at->diffForHumans(),
+                ];
+            });
+
+            // Trả về dữ liệu dưới dạng JSON
+            return response()->json([
+                'success' => true,
+                'message' => 'success',
+                'data' => $jobsData,
+                'links' => [
+                    'first' => $jobs->url(1),
+                    'last' => $jobs->url($jobs->lastPage()),
+                    'prev' => $jobs->previousPageUrl(),
+                    'next' => $jobs->nextPageUrl(),
+                ],
+            ]);
+        }
+
+        // Nếu người dùng không có công ty, trả về thông báo lỗi hoặc thông tin tùy thuộc vào yêu cầu của bạn
         return response()->json([
-            'success' => true,
-            'message' => 'success',
-            'data' => $jobsData,
-            'links' => [
-                'first' => $jobs->url(1),
-                'last' => $jobs->url($jobs->lastPage()),
-                'prev' => $jobs->previousPageUrl(),
-                'next' => $jobs->nextPageUrl(),
-            ],
-        ]);
+            'success' => false,
+            'message' => 'User does not have a company.',
+        ], 404);
     }
 
     /**
@@ -307,7 +322,7 @@ class JobsController extends Controller
         return response()->json(['message' => 'Xóa ứng tuyển của công việc.'], 200);
     }
 
-    public function applicant()
+    public function applicant(): \Illuminate\Http\JsonResponse
     {
         $user = Auth::guard('sanctum')->user();
         if (! $user) {
@@ -344,35 +359,6 @@ class JobsController extends Controller
     }
 
 
-    public function processApplication(Request $request, $jobId, $userId)
-    {
-        $job = Job::find($jobId);
-        if (! $job) {
-            return response()->json(['message' => 'Công việc không tồn tại.'], 404);
-        }
-
-        $user = User::find($userId);
-        if (! $user) {
-            return response()->json(['message' => 'Người dùng không tồn tại.'], 404);
-        }
-
-        $status = $request->input('status');
-        if (! in_array($status, ['approved', 'rejected'])) {
-            return response()->json(['message' => 'Trạng thái không hợp lệ.'], 400);
-        }
-
-        // Update the status of the application
-        $job->users()->updateExistingPivot($user->id, ['status' => $status]);
-
-        // Send notification email to the applicant
-        if ($status === 'approved') {
-            Mail::to($user->email)->send(new ApplicationApproved($job, $user));
-        } elseif ($status === 'rejected') {
-            Mail::to($user->email)->send(new ApplicationRejected($job, $user));
-        }
-
-        return response()->json(['message' => 'Xử lí đơn ứng tuyển thành công.'], 200);
-    }
 
     public function viewAppliedJobs()
     {
@@ -499,5 +485,59 @@ class JobsController extends Controller
         $user->favorites()->detach($job->id);
 
         return response()->json(['message' => 'Job removed from favorites'], 200);
+    }
+
+    public function indexShow()
+    {
+        $jobs = Job::with('jobtype', 'skill', 'Company')->paginate(5);
+
+        $jobsData = $jobs->map(function ($job) {
+            return [
+                'id' => $job->id,
+                'title' => $job->title,
+                'company' => $job->company ? $job->company->name : null,
+                'salary' => $job->salary,
+                'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
+                'skills' => $job->skill->pluck('name')->toArray(),
+                'address' => $job->address,
+                'last_date' => $job->last_date,
+                'created_at' => $job->created_at->diffForHumans(),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'success',
+            'data' => $jobsData,
+            'links' => [
+                'first' => $jobs->url(1),
+                'last' => $jobs->url($jobs->lastPage()),
+                'prev' => $jobs->previousPageUrl(),
+                'next' => $jobs->nextPageUrl(),
+            ],
+        ]);
+    }
+
+    public function showJob(Job $job)
+    {
+        $job->load('jobtype', 'skill', 'company');
+
+        $jobData = [
+            'id' => $job->id,
+            'title' => $job->title,
+            'company' => $job->company ? $job->company->name : null,
+            'salary' => $job->salary,
+            'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
+            'skills' => $job->skill->pluck('name')->toArray(),
+            'address' => $job->address,
+            'last_date' => $job->last_date,
+            'created_at' => $job->created_at->diffForHumans(),
+        ];
+
+        return response()->json([
+            'success' => true,
+            'message' => 'success',
+            'data' => $jobData,
+        ]);
     }
 }
