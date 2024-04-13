@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 class Job extends Model
 {
     use HasFactory;
+
     protected $table = 'jobs';
     protected $primaryKey = 'id';
     protected $guarded = [];
@@ -27,9 +28,9 @@ class Job extends Model
     {
         return $this->hasMany(Jobtype::class,'id','jobtype_id');
     }
-    public function city()  : \Illuminate\Database\Eloquent\Relations\HasMany
+    public function jobcity()
     {
-        return $this->hasMany(City::class,'id','id');
+        return $this->hasMany(City::class,'id','city_id');
     }
 
 //    public function checkSaved(){

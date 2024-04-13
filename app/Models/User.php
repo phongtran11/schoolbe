@@ -88,4 +88,9 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Job::class)->withPivot('status');
     }
+
+    public function cvs()
+    {
+        return $this->hasMany(CV::class,'users_id','id');
+    }
 }

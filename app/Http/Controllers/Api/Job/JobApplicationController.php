@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 class JobApplicationController extends Controller
 {
@@ -94,6 +95,10 @@ class JobApplicationController extends Controller
             return response()->json(['message' => 'Công việc không tồn tại.'], 404);
         }
 
+        // Check if the authenticated user is the owner of the job
+        if ($job->users_id !== Auth::id()) {
+            return response()->json(['message' => 'Bạn không có quyền thực hiện chức năng này.'], 403);
+        }
         $user = User::find($userId);
         if (!$user) {
             return response()->json(['message' => 'Người dùng không tồn tại.'], 404);
@@ -115,6 +120,26 @@ class JobApplicationController extends Controller
         }
 
         return response()->json(['message' => 'Xử lí đơn ứng tuyển thành công.'], 200);
+    }
+
+    public function toggle(Request $request, $id)
+    {
+        // Find the job by ID
+        $job = Job::findOrFail($id);
+
+        // Check if the authenticated user is the owner of the job
+        if ($job->users_id !== Auth::id()) {
+            return response()->json(['message' => 'Bạn không có quyền thực hiện chức năng này.'], 403);
+        }
+
+        // Toggle the status
+        $job->status = !$job->status;
+
+        // Save the changes
+        $job->save();
+
+        // Return a JSON response indicating success
+        return response()->json(['message' => 'Trạng thái đã được cập nhật thành công!'], 200);
     }
 
 

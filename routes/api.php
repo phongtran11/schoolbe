@@ -15,12 +15,15 @@ use App\Http\Controllers\Api\Recruitments\experience_levelController;
 use App\Http\Controllers\Api\Resume\AboutmeController;
 use App\Http\Controllers\Api\Resume\AwardsController;
 use App\Http\Controllers\Api\Resume\CertificatesController;
+use App\Http\Controllers\Api\Resume\CvsController;
 use App\Http\Controllers\Api\Resume\EducationController;
 use App\Http\Controllers\Api\Resume\ExperiencesController;
 use App\Http\Controllers\Api\Resume\GetResumeController;
 use App\Http\Controllers\Api\Resume\profilesController;
 use App\Http\Controllers\Api\Resume\ProjectsController;
 use App\Http\Controllers\Api\Resume\skillsController;
+use App\Http\Controllers\Api\User\UserJobController;
+use App\Http\Middleware\CheckUserRole;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -37,8 +40,7 @@ use Illuminate\Support\Facades\Route;
 //User Jobs
 Route::get('/', [JobsController::class, 'indexShow']);
 Route::get('/jobs/{job}', [JobsController::class, 'showJob']);
-
-Route::get('/jobs/search', [JobsController::class, 'search']);
+Route::get('/search', [JobsController::class, 'search']);
 
 //Auth
 Route::post('employer/register', [EmployerRegisterController::class, 'employerRegister']);
@@ -55,7 +57,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::resource('profiles/projects', ProjectsController::class);
     Route::resource('profiles/getResume', GetResumeController::class);
     Route::resource('profiles/experiences', ExperiencesController::class);
+    Route::post('/upload-cv', [\App\Http\Controllers\Api\Resume\CvsController::class, 'upload']);
+    Route::apiResource('cvs', 'App\Http\Controllers\Api\Resume\CvsController');
 
+
+// Route cho việc đặt CV mặc định
+    Route::get('/default-cv',  [\App\Http\Controllers\Api\Resume\CvsController::class, 'getDefaultCv']);
+    Route::put('/cvs/{cv}/set-default', [CvsController::class, 'setDefault'])->name('cvs.set-default');
     //Company
     Route::resource('companies', CompaniesController::class);
     Route::resource('companies/location', CompanyLocationsController::class);
@@ -63,21 +71,21 @@ Route::middleware('auth:sanctum')->group(function () {
     //Apply
 
     Route::post('/jobs/{id}/apply', [JobsController::class, 'apply']);
-    Route::get('/job/viewAppliedJobs', [JobsController::class, 'applicant']);
+    Route::get('/viewAppliedJobs', [JobsController::class, 'applicant']);
 
-    //Jobs
-    Route::resource('job', JobsController::class);
+    Route::middleware(CheckUserRole::class)->group(function () {
+        Route::resource('job', JobsController::class);
+    });
 
-
-    //favorites Job
+    //favorites Job User
     Route::post('/favorites/{id}/save', [JobsController::class, 'saveJob']);
     Route::post('/favorites/{id}/unsave', [JobsController::class, 'unsaveJob']);
     Route::get('/favorites/saved-jobs', [JobsController::class, 'savedJobs']);
-
     Route::get('/appliedJobs', [JobsController::class, 'appliedJobs']);
 
 
     //JobAdmin
+    Route::post('/{id}/toggle', [JobApplicationController::class, 'toggle']);
     Route::get('/applications', [JobApplicationController::class, 'index']);
     Route::post('/processApplication/{jobId}/{userId}', [JobApplicationController::class, 'processApplication']);
     Route::get('/getStatistics', [JobApplicationController::class, 'getStatistics']);

@@ -7,6 +7,7 @@ use App\Mail\JobApplied;
 use App\Models\Job;
 use Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
@@ -33,6 +34,8 @@ class JobsController extends Controller
                     'company' => $job->company ? $job->company->name : null,
                     'salary' => $job->salary,
                     'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
+                    'job_city' => $job->jobcity ? $job->jobcity->pluck('name')->toArray() : null,
+
                     'skills' => $job->skill->pluck('name')->toArray(),
                     'address' => $job->address,
                     'last_date' => $job->last_date,
@@ -150,22 +153,51 @@ class JobsController extends Controller
     /**
      * Display the specified resource.
      */
+//    public function show(Job $job)
+//    {
+//        // Lấy các công việc đề xuất
+//        $jobRecommendation = $this->jobRecommend($job);
+//
+//        // Tạo một mảng dữ liệu chứa thông tin về công việc và đề xuất công việc
+//        $responseData = [
+//            'job' => $job,
+//            'job_recommendation' => $jobRecommendation,
+//        ];
+//
+//        // Trả về dữ liệu dưới dạng JSON
+//        return response()->json([
+//            'success' => true,
+//            'message' => 'success',
+//            'data' => $responseData,
+//        ]);
+//    }
+
     public function show(Job $job)
     {
-        // Lấy các công việc đề xuất
-        $jobRecommendation = $this->jobRecommend($job);
+        // Load relationships in advance
+        $job->load('jobtype', 'skill', 'jobcity');
 
-        // Tạo một mảng dữ liệu chứa thông tin về công việc và đề xuất công việc
-        $responseData = [
-            'job' => $job,
-            'job_recommendation' => $jobRecommendation,
+        // Prepare data for the job
+        $jobData = [
+            'id' => $job->id,
+            'title' => $job->title,
+            'salary' => $job->salary,
+            'status' => $job->status,
+            'featured' => $job->featured,
+            'description' => $job->description,
+            'benefits' => $job->benefits,
+            'last_date' => $job->last_date,
+            'job_type' => $job->jobtype ? $job->jobtype->name : null,
+            'skills' => $job->skills->pluck('name')->toArray(),
+            'address' => $job->address,
+            'created_at' => $job->created_at->diffForHumans(),
         ];
 
-        // Trả về dữ liệu dưới dạng JSON
+        // Return data as JSON response
         return response()->json([
             'success' => true,
             'message' => 'success',
-            'data' => $responseData,
+            'data' => $jobData,
         ]);
     }
 
@@ -304,23 +336,7 @@ class JobsController extends Controller
         return response()->json(['message' => 'Ứng tuyển công việc thành công.'], 200);
     }
 
-    public function destroyApplication($id)
-    {
-        $job = Job::find($id);
-        if (! $job) {
-            return response()->json(['message' => 'Công việc không tồn tại.'], 404);
-        }
 
-        $user = Auth::guard('sanctum')->user();
-
-        if (! $user) {
-            return response()->json(['message' => 'Unauthorized'], 401);
-        }
-
-        $job->users()->detach($user->id);
-
-        return response()->json(['message' => 'Xóa ứng tuyển của công việc.'], 200);
-    }
 
     public function applicant(): \Illuminate\Http\JsonResponse
     {
@@ -334,8 +350,9 @@ class JobsController extends Controller
         $formattedJobs = $appliedJobs->map(function ($job) {
             $company = $job->company()->first(); // Lấy thông tin của công ty
             $jobType = $job->jobType()->first(); // Lấy thông tin của loại công việc
-            $city = $job->city()->first(); // Lấy thông tin của thành phố
-
+            $city = $job->jobcity()->first(); // Lấy thông tin của thành phố
+            $lastDate = Carbon::createFromFormat('Y-m-d', $job->last_date);
+            $daysRemaining = $lastDate->diffInDays(Carbon::now());
             return [
                 'id' => $job->id,
                 'company' => $company ? $company->name : null, // Kiểm tra xem công ty có tồn tại không trước khi truy cập trường name
@@ -344,12 +361,14 @@ class JobsController extends Controller
                 'title' => $job->title,
                 'salary' => $job->salary,
                 'status' => $job->pivot->status,
-                'featured' => $job->featured,
+//                'featured' => $job->featured,
                 'address' => $job->address,
                 'description' => $job->description,
                 'skill_experience' => $job->skill_experience,
                 'benefits' => $job->benefits,
                 'last_date' => $job->last_date,
+                'last_date' => $daysRemaining,
+
                 'created_at' => $job->created_at,
                 'updated_at' => $job->updated_at,
             ];
@@ -360,25 +379,9 @@ class JobsController extends Controller
 
 
 
-    public function viewAppliedJobs()
-    {
-
-        $user = Auth::id();
-        if (! $user) {
-            return response()->json(['message' => 'Người dùng không tồn tại.'], 404);
-        }
-
-        $appliedJobs = Job::whereHas('users', function ($query) use ($user) {
-            $query->where('users.id', $user);
-        })->with('company')->get();
-
-        // You can customize the response format as needed
-        return response()->json(['user' => $user, 'applied_jobs' => $appliedJobs], 200);
-    }
 
     public function search(Request $request)
     {
-        // Get the search query from the request
         $searchQuery = $request->input('query', '');
 
         // If the search query is empty, return all jobs
@@ -388,9 +391,18 @@ class JobsController extends Controller
 
         // Search for jobs where the title or description contains the search query
         // You can adjust the fields you wish to search in
-        $jobs = Job::with('jobtype', 'skill', 'Company')
+        $jobs = Job::with('jobtype', 'skill', 'company')
             ->where('title', 'like', "%{$searchQuery}%")
             ->orWhere('description', 'like', "%{$searchQuery}%")
+            ->orWhereHas('skill', function ($query) use ($searchQuery) {
+                $query->where('name', 'like', "%{$searchQuery}%");
+            })
+            ->orWhereHas('jobtype', function ($query) use ($searchQuery) {
+                $query->where('name', 'like', "%{$searchQuery}%");
+            })
+            ->orWhereHas('company', function ($query) use ($searchQuery) {
+                $query->where('name', 'like', "%{$searchQuery}%");
+            })
             ->paginate(5);
 
         // Transform the jobs as done in the index method or any other preferred format
@@ -489,7 +501,10 @@ class JobsController extends Controller
 
     public function indexShow()
     {
-        $jobs = Job::with('jobtype', 'skill', 'Company')->paginate(5);
+        $jobs = Job::where('status', 1)
+            ->orderBy('created_at', 'desc') // Sắp xếp theo thời gian tạo mới nhất
+            ->with('jobtype', 'skill', 'company')
+            ->paginate(5);
 
         $jobsData = $jobs->map(function ($job) {
             return [
@@ -518,6 +533,7 @@ class JobsController extends Controller
         ]);
     }
 
+
     public function showJob(Job $job)
     {
         $job->load('jobtype', 'skill', 'company');
@@ -530,6 +546,9 @@ class JobsController extends Controller
             'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
             'skills' => $job->skill->pluck('name')->toArray(),
             'address' => $job->address,
+            'description' => $job->description,
+            'skill_experience' => $job->skill_experience,
+            'benefits' => $job->benefits,
             'last_date' => $job->last_date,
             'created_at' => $job->created_at->diffForHumans(),
         ];
