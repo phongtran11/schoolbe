@@ -19,24 +19,54 @@ class SkillsController extends Controller
      */
     public function index()
     {
-        $user = User::where("id", auth()->user()->id)->firstOrFail();
-        $profiles = profile::where("users_id", $user->id)->firstOrFail();
-        $skill = Skill::where("profiles_id", $profiles->id)->get();
-        $skillData = $skill->map(function ($skill) {
+        $user = auth()->user();
+        $profile = $user->profile;
+        $profiles_id = $profile->id;
+
+        if (!$profile) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User does not have a profile',
+            ], 400);
+        }
+
+
+        $skills = Skill::where('profiles_id', $profiles_id)->get();
+
+        $skillData = $skills->map(function ($skill) {
+            // Chuyển đổi cấp độ thành các chuỗi tương ứng
+            $levelString = '';
+            switch ($skill->level) {
+                case 1:
+                    $levelString = 'Beginner';
+                    break;
+                case 2:
+                    $levelString = 'Intermediate';
+                    break;
+                case 3:
+                    $levelString = 'Excellent';
+                    break;
+                default:
+                    $levelString = 'unknown';
+            }
+
             return [
                 'id' => $skill->id,
+                'level' => $levelString, // Thay vì là số, chúng ta sử dụng chuỗi tương ứng
+
                 'name' => $skill->name,
-                'level' => $skill->level,
             ];
         });
 
-        // Trả về danh sách giáo dục dưới dạng JSON
         return response()->json([
             'success' => true,
-            'message' => 'success',
-            'data' => $skillData
+            'message' => 'Success',
+            'data' => $skillData,
+            'status_code' => 200
         ]);
     }
+
+
 
     /**
      * Store a newly created resource in storage.
@@ -44,7 +74,7 @@ class SkillsController extends Controller
     public function store(Request $request, Validator $validator)
     {
         $user = auth()->user();
-        $profile = $user->profile->first();
+        $profile = $user->profile;
 
         if (!$profile) {
             return response()->json([
@@ -55,11 +85,11 @@ class SkillsController extends Controller
 
         $profiles_id = $profile->id;
 
-        $data = $request->all();
+        $data = $request->json()->all(); // Sử dụng phương thức json() để trích xuất dữ liệu JSON từ request
 
         $validationRules = [
-            'skills.*.name' => 'required|string',
-            'skills.*.level' => 'required|numeric',
+            '*.name' => 'required|string',
+            '*.level' => 'required|numeric',
         ];
 
         $validation = $validator::make($data, $validationRules);
@@ -77,7 +107,7 @@ class SkillsController extends Controller
 
         // Chuẩn bị dữ liệu cho việc thêm mới kỹ năng
         $skillsData = [];
-        foreach ($data['skills'] as $skill) {
+        foreach ($data as $skill) { // Lặp qua mảng dữ liệu JSON được truyền vào
             $skillsData[] = [
                 'name' => $skill['name'],
                 'level' => $skill['level'],
@@ -90,31 +120,36 @@ class SkillsController extends Controller
         // Thêm mới các kỹ năng cho người dùng
         Skill::insert($skillsData);
 
+        // Lấy danh sách kỹ năng đã được thêm mới
+        $newSkills = Skill::where('profiles_id', $profiles_id)->get();
+
         return response()->json([
             'success' => true,
             'message' => "Skills updated successfully",
+            'skills' => $newSkills, // Trả về danh sách kỹ năng mới
             'status_code' => 200
         ]);
     }
 
 
 
+
     public function show(Skill $skill)
     {
-        $profileId = auth()->user()->profile->first()->id;
-
-        if ($skill->profiles_id == $profileId) {
-            return response()->json([
-                'success' => true,
-                'message' => 'success',
-                'data' => $skill
-            ]);
-        }
-
-        return response()->json([
-            'success' => false,
-            'message' => 'fail'
-        ]);
+//        $profileId = auth()->user()->profile->first()->id;
+//
+//        if ($skill->profiles_id == $profileId) {
+//            return response()->json([
+//                'success' => true,
+//                'message' => 'success',
+//                'data' => $skill
+//            ]);
+//        }
+//
+//        return response()->json([
+//            'success' => false,
+//            'message' => 'fail'
+//        ]);
     }
     /**
      * Update the specified resource in storage.
@@ -146,6 +181,15 @@ class SkillsController extends Controller
      */
     public function destroy(Skill $skill)
     {
+        $user = auth()->user();
+        $profile = $user->profile;
+
+        if ($skill->profiles_id !== $profile->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to delete the award',
+            ], 403);
+        }
         $skill->delete();
         return response()->json([
             'success' => true,

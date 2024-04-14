@@ -18,11 +18,12 @@ class ExperiencesController extends Controller
     public function index()
     {
         $user =  auth()->user();
-        $profile = $user->profile->first();
+        $profile = $user->profile;
         $profile_id = $profile->id;
         $experience = Experience::where("profiles_id", $profile_id)->get();
         $experienceData = $experience->map(function ($experience) {
             return [
+                'id' => $experience->id,
                 'position' => $experience->position,
                 'company' => $experience->company,
                 'start_date' => $experience->start_date,
@@ -44,16 +45,16 @@ class ExperiencesController extends Controller
      */
     public function store(Request $request)
     {
-        $user = User::where("id", auth()->user()->id)->first();
-        $profile = $user->profile->first();
-        $profiles = $profile->id;
+        $user =  auth()->user();
+        $profile = $user->profile;
+        $profile_id = $profile->id;
         $data = [
             'position' => $request->input('position'),
             'company' => $request->input('company'),
             'start_date' => $request->input('start_date'),
             'end_date' => $request->input('end_date'),
             'responsibilities' => $request->input('responsibilities'),
-            'profiles_id' => $profiles
+            'profiles_id' => $profile_id
         ];
         $validator = Validator::make($data, [
             'position' => 'required',
@@ -87,27 +88,27 @@ class ExperiencesController extends Controller
      */
     public function show(Experience $experience)
     {
-        $user = User::where("id", auth()->user()->id)->first();
-        $profile = $user->profile->first();
-        if ($experience->profiles_id !== $profile->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized access to the award',
-            ], 403);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'success',
-            'data' => [
-                'position' => $experience->position,
-                'company' => $experience->company,
-                'start_date' => $experience->start_date,
-                'end_date' => $experience->end_date,
-                'responsibilities' => $experience->responsibilities,
-            ],
-            'status_code' => 200
-        ]);
+//        $user = User::where("id", auth()->user()->id);
+//        $profile = $user->profile;
+//        if ($experience->profiles_id !== $profile->id) {
+//            return response()->json([
+//                'success' => false,
+//                'message' => 'Unauthorized access to the award',
+//            ], 403);
+//        }
+//
+//        return response()->json([
+//            'success' => true,
+//            'message' => 'success',
+//            'data' => [
+//                'position' => $experience->position,
+//                'company' => $experience->company,
+//                'start_date' => $experience->start_date,
+//                'end_date' => $experience->end_date,
+//                'responsibilities' => $experience->responsibilities,
+//            ],
+//            'status_code' => 200
+//        ]);
     }
 
     /**

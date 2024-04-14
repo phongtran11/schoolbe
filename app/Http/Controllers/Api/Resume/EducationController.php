@@ -17,9 +17,10 @@ class EducationController extends Controller
      */
     public function index()
     {
-        $user = User::where("id", auth()->user()->id)->firstOrFail();
-        $profiles = profile::where("users_id", $user->id)->firstOrFail();
-        $educations = educations::where("profiles_id", $profiles->id)->get();
+        $user =  auth()->user();
+        $profile = $user->profile;
+        $profile_id = $profile->id;
+        $educations = educations::where("profiles_id", $profile_id)->get();
 
         $educationsData = $educations->map(function ($education) {
             return [
@@ -47,8 +48,9 @@ class EducationController extends Controller
      */
     public function store(Request $request)
     {
-        $user = User::where("id", auth()->user()->id)->first();
-        $profile = $user->profile->first();
+        $user =  auth()->user();
+
+        $profile = $user->profile;
         $profiles_id = $profile->id;
         $data = [
             'degree' => $request->input('degree'),
@@ -93,8 +95,10 @@ class EducationController extends Controller
      */
     public function show(educations $education)
     {
-        $user = User::where("id", auth()->user()->id)->first();
-        $profile = $user->profile->first();
+        $user =  auth()->user();
+
+        $profile = $user->profile;
+        $profiles_id = $profile->id;
         if ($education->profiles_id !== $profile->id) {
             return response()->json([
                 'success' => false,
@@ -120,9 +124,41 @@ class EducationController extends Controller
      */
     public function update(Request $request, educations $education)
     {
-        $data = $request->all();
+        $user = auth()->user();
+
+        // Kiểm tra xem người dùng có quyền truy cập vào thông tin giáo dục không
+        if ($education->profile->user_id !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to update education',
+            ], 403);
+        }
+
+        // Validate dữ liệu đầu vào
+        $validator = Validator::make($request->all(), [
+            'degree' => 'required',
+            'institution' => 'required',
+            'start_date' => 'required',
+            'end_date' => 'required|date|after:start_date',
+            'additionalDetail' => 'required',
+        ]);
+
+        // Nếu dữ liệu không hợp lệ, trả về thông báo lỗi
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 400);
+        }
+
+        // Lấy dữ liệu đã validate
+        $data = $validator->validated();
+
+        // Cập nhật thông tin giáo dục
         $education->update($data);
 
+        // Trả về thông báo thành công và dữ liệu đã cập nhật
         return response()->json([
             'success' => true,
             'message' => 'Education updated successfully',
@@ -131,11 +167,22 @@ class EducationController extends Controller
         ]);
     }
 
+
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(educations $education)
     {
+        $user = auth()->user();
+        $profile = $user->profile;
+
+        if ($education->profiles_id !== $profile->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to delete the award',
+            ], 403);
+        }
+
         if (!$education) {
             return response()->json([
                 'success' => false,

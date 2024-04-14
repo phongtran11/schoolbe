@@ -19,7 +19,7 @@ class AwardsController extends Controller
     public function index()
     {
         $user =  auth()->user();
-        $profile = $user->profile->first();
+        $profile = $user->profile;
         $profile_id = $profile->id;
         $awards = Award::where("profiles_id", $profile_id)->get();
 
@@ -48,7 +48,7 @@ class AwardsController extends Controller
     public function store(Request $request)
     {
         $user =  auth()->user();
-        $profile = $user->profile->first();
+        $profile = $user->profile;
         $profile_id = $profile->id;
 
         $data = [
@@ -83,7 +83,7 @@ class AwardsController extends Controller
             'success'   => true,
             'message'   => "success",
             "data" => $Award,
-            'status_code' => 201
+            'status_code' => 200
         ]);
     }
 
@@ -92,27 +92,27 @@ class AwardsController extends Controller
      */
     public function show(Award $award)
     {
-        // Check if the award belongs to the authenticated user
-        $user = User::where("id", auth()->user()->id)->first();
-        $profile = $user->profile->first();
-        if ($award->profiles_id !== $profile->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized access to the award',
-            ], 403);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'success',
-            'data' => [
-                'title' => $award->title,
-                'provider' => $award->provider,
-                'issueDate' => $award->issueDate,
-                'description' => $award->description,
-            ],
-            'status_code' => 200
-        ]);
+//        // Check if the award belongs to the authenticated user
+//        $user = User::where("id", auth()->user()->id)->first();
+//        $profile = $user->profile->first();
+//        if ($award->profiles_id !== $profile->id) {
+//            return response()->json([
+//                'success' => false,
+//                'message' => 'Unauthorized access to the award',
+//            ], 403);
+//        }
+//
+//        return response()->json([
+//            'success' => true,
+//            'message' => 'success',
+//            'data' => [
+//                'title' => $award->title,
+//                'provider' => $award->provider,
+//                'issueDate' => $award->issueDate,
+//                'description' => $award->description,
+//            ],
+//            'status_code' => 200
+//        ]);
     }
 
     /**
@@ -120,6 +120,16 @@ class AwardsController extends Controller
      */
     public function update(Request $request, Award $award)
     {
+        $user = auth()->user();
+        $profile = $user->profile;
+
+        if ($award->profiles_id !== $profile->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to delete the award',
+            ], 403);
+        }
+
         $data = $request->all();
 
 
@@ -136,14 +146,28 @@ class AwardsController extends Controller
     /**
      * Remove the specified resource from storage.
      */
+    /**
+     * Remove the specified resource from storage.
+     */
     public function destroy(Award $award)
     {
+        $user = auth()->user();
+        $profile = $user->profile;
+
+        if ($award->profiles_id !== $profile->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to delete the award',
+            ], 403);
+        }
+
         $award->delete();
+
         return response()->json([
             'success' => true,
-            'message' => 'Award me deleted successfully',
+            'message' => 'Award deleted successfully',
             'status_code' => 200
         ]);
-
     }
+
 }

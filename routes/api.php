@@ -61,7 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('cvs', 'App\Http\Controllers\Api\Resume\CvsController');
 
 
-// Route cho việc đặt CV mặc định
+    // Route cho việc đặt CV mặc định
     Route::get('/default-cv',  [\App\Http\Controllers\Api\Resume\CvsController::class, 'getDefaultCv']);
     Route::put('/cvs/{cv}/set-default', [CvsController::class, 'setDefault'])->name('cvs.set-default');
     //Company
@@ -97,5 +97,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::resource('Admin/country', CountriesController::class);
     Route::resource('Admin/companyType', CompanytypesController::class);
     Route::resource('Admin/companySize', CompanysizesController::class);
-    Route::post('logout', [AuthController::class, 'logout']);
+    Route::Delete('logout', [AuthController::class, 'logout']);
+
 });

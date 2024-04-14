@@ -29,6 +29,7 @@ class CompaniesController extends Controller
             $city = optional($company->city)->name;
 
             return [
+                'id' => $company->id,
                 'name' => $company->name,
                 'company_type' => $companyType,
                 'company_size' => $companySize,
@@ -62,7 +63,7 @@ class CompaniesController extends Controller
             'Working_days' => 'required',
             'Overtime_policy' => 'required',
             'webstie' => 'required',
-            'logo' => 'required',
+//            'logo' => 'required',
             'facebook' => 'required',
             'description' => 'required',
         ]);
@@ -77,7 +78,7 @@ class CompaniesController extends Controller
 
         $data = $request->only([
             'company_size_id', 'company_type_id', 'name', 'Working_days',
-            'Overtime_policy', 'webstie', 'logo', 'facebook', 'description'
+            'Overtime_policy', 'webstie', 'logo', 'facebook', 'description', 'address'
         ]);
 
         // Upload logo

@@ -19,11 +19,13 @@ class ProjectsController extends Controller
      */
     public function index()
     {
-        $user = User::where("id", auth()->user()->id)->firstOrFail();
-        $profiles = profile::where("users_id", $user->id)->firstOrFail();
-        $project = Project::where("profiles_id", $profiles->id)->get();
+        $user =  auth()->user();
+        $profile = $user->profile;
+        $profile_id = $profile->id;
+        $project = Project::where("profiles_id", $profile_id)->get();
         $projectData = $project->map(function ($project) {
             return [
+                'id' => $project->id,
                 'title' => $project->title,
                 'start_date' => $project->start_date,
                 'end_date' => $project->end_date,
@@ -45,15 +47,15 @@ class ProjectsController extends Controller
      */
     public function store(Request $request)
     {
-        $user = User::where("id", auth()->user()->id)->first();
-        $profile = $user->profile->first();
-        $profiles_id = $profile->id;
+        $user =  auth()->user();
+        $profile = $user->profile;
+        $profile_id = $profile->id;
         $data = [
             'title' => $request->input('title'),
             'start_date' => $request->input('start_date'),
             'end_date' => $request->input('end_date'),
             'description' => $request->input('description'),
-            'profiles_id' => $profiles_id
+            'profiles_id' => $profile_id
         ];
 
         $validator = Validator::make($data, [
@@ -92,22 +94,22 @@ class ProjectsController extends Controller
      */
     public function show(Request $request, Project $project)
     {
-        $user = User::where("id", auth()->user()->id)->first();
-        $profile = $user->profile->first();
-
-        if ($project->profiles_id == $profile->id) {
-            return response()->json([
-                'success' => true,
-                'message' => 'success',
-                'data' => $project,
-                'status_code' => 200
-            ]);
-        } else {
-            return response()->json([
-                'success' => false,
-                'message' => 'fail'
-            ]);
-        }
+//        $user = User::where("id", auth()->user()->id)->first();
+//        $profile = $user->profile->first();
+//
+//        if ($project->profiles_id == $profile->id) {
+//            return response()->json([
+//                'success' => true,
+//                'message' => 'success',
+//                'data' => $project,
+//                'status_code' => 200
+//            ]);
+//        } else {
+//            return response()->json([
+//                'success' => false,
+//                'message' => 'fail'
+//            ]);
+//        }
     }
 
 

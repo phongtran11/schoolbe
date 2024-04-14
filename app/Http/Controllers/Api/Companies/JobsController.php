@@ -26,7 +26,6 @@ class JobsController extends Controller
             // Lấy danh sách công việc của công ty của người dùng hiện tại
             $jobs = $user->companies->jobs()->paginate(5);
 
-            // Chuyển đổi dữ liệu công việc thành định dạng mong muốn
             $jobsData = $jobs->map(function ($job) {
                 return [
                     'id' => $job->id,
@@ -37,7 +36,7 @@ class JobsController extends Controller
                     'job_city' => $job->jobcity ? $job->jobcity->pluck('name')->toArray() : null,
 
                     'skills' => $job->skill->pluck('name')->toArray(),
-                    'address' => $job->address,
+                    'address' => $job->company ? $job->company->address : null,
                     'last_date' => $job->last_date,
                     'created_at' => $job->created_at->diffForHumans(),
                 ];
@@ -176,7 +175,6 @@ class JobsController extends Controller
     {
         // Load relationships in advance
         $job->load('jobtype', 'skill', 'jobcity');
-
         // Prepare data for the job
         $jobData = [
             'id' => $job->id,
@@ -187,8 +185,9 @@ class JobsController extends Controller
             'description' => $job->description,
             'benefits' => $job->benefits,
             'last_date' => $job->last_date,
-            'job_type' => $job->jobtype ? $job->jobtype->name : null,
-            'skills' => $job->skills->pluck('name')->toArray(),
+//            'job_type' => $job->jobtype ? $job->jobtype->name : null,
+//            'jobcity' => $job->jobcity ? $job->jobcity->name : null,
+//            'skills' => $job->skills->pluck('name')->toArray(),
             'address' => $job->address,
             'created_at' => $job->created_at->diffForHumans(),
         ];
@@ -206,6 +205,12 @@ class JobsController extends Controller
      */
     public function update(Request $request, Job $job)
     {
+        if ($request->user()->id !== $job->company->user_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn không có quyền chỉnh sửa job này.',
+            ], 403); // 403 là mã lỗi "Forbidden" khi người dùng không có quyền truy cập
+        }
         try {
             // Start a transaction
             \DB::beginTransaction();
@@ -503,7 +508,7 @@ class JobsController extends Controller
     {
         $jobs = Job::where('status', 1)
             ->orderBy('created_at', 'desc') // Sắp xếp theo thời gian tạo mới nhất
-            ->with('jobtype', 'skill', 'company')
+            ->with('jobtype', 'skill', 'company','jobcity')
             ->paginate(5);
 
         $jobsData = $jobs->map(function ($job) {
@@ -513,8 +518,10 @@ class JobsController extends Controller
                 'company' => $job->company ? $job->company->name : null,
                 'salary' => $job->salary,
                 'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
+                'jobcity' => $job->jobcity ? $job->jobcity->pluck('name')->toArray() : null,
+
                 'skills' => $job->skill->pluck('name')->toArray(),
-                'address' => $job->address,
+                'address' => $job->company->address,
                 'last_date' => $job->last_date,
                 'created_at' => $job->created_at->diffForHumans(),
             ];
@@ -536,7 +543,7 @@ class JobsController extends Controller
 
     public function showJob(Job $job)
     {
-        $job->load('jobtype', 'skill', 'company');
+        $job->load('jobtype', 'skill', 'company','jobcity');
 
         $jobData = [
             'id' => $job->id,
@@ -544,8 +551,9 @@ class JobsController extends Controller
             'company' => $job->company ? $job->company->name : null,
             'salary' => $job->salary,
             'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
+            'jobcity' => $job->jobcity ? $job->jobcity->pluck('name')->toArray() : null,
             'skills' => $job->skill->pluck('name')->toArray(),
-            'address' => $job->address,
+            'address' => $job->company->address,
             'description' => $job->description,
             'skill_experience' => $job->skill_experience,
             'benefits' => $job->benefits,

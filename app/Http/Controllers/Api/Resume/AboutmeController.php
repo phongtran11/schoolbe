@@ -18,7 +18,7 @@ class AboutmeController extends Controller
     public function index()
     {
         $user =  auth()->user();
-        $profile = $user->profile->first();
+        $profile = $user->profile;
         $profile_id = $profile->id;
         $aboutme = aboutme::where("profiles_id", $profile_id)->get();
         $aboutmeData = $aboutme->map(function ($aboutme) {
@@ -41,7 +41,7 @@ class AboutmeController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        $profile = $user->profile->first();
+        $profile = $user->profile;
         $profile_id = $profile->id;
 
         $data = [
@@ -84,23 +84,23 @@ class AboutmeController extends Controller
      */
     public function show(aboutme $aboutme)
     {
-        $user = User::where("id", auth()->user()->id)->first();
-        $profile = $user->profile->first();
-        if ($aboutme->profiles_id !== $profile->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized access to the award',
-            ], 403);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'success',
-            'data' => [
-                'description' => $aboutme->description,
-            ],
-            'status_code' => 200
-        ]);
+//        $user = User::where("id", auth()->user()->id)->first();
+//        $profile = $user->profile->first();
+//        if ($aboutme->profiles_id !== $profile->id) {
+//            return response()->json([
+//                'success' => false,
+//                'message' => 'Unauthorized access to the award',
+//            ], 403);
+//        }
+//
+//        return response()->json([
+//            'success' => true,
+//            'message' => 'success',
+//            'data' => [
+//                'description' => $aboutme->description,
+//            ],
+//            'status_code' => 200
+//        ]);
     }
 
     /**

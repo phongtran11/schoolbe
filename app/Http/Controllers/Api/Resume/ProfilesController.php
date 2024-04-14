@@ -45,20 +45,24 @@ class ProfilesController extends Controller
      */
     public function store(Request $request)
     {
+        // Tìm profile của người dùng hiện tại
         $profile = Profile::where('users_id', auth()->user()->id)->first();
 
-        // Only perform validation if we're creating a new profile
+        // Nếu không có profile tồn tại, tạo mới
         if (!$profile) {
+            // Thực hiện validation
             $validator = Validator::make($request->all(), [
+                'name' => 'required',
                 'title' => 'required',
                 'phone' => 'required',
                 'email' => 'required',
                 'birthday' => 'required',
                 'location' => 'required',
                 'website' => 'required',
-                'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+//                'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 
+            // Nếu validation không thành công, trả về lỗi
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
@@ -67,10 +71,12 @@ class ProfilesController extends Controller
                 ], 400);
             }
 
+            // Upload file ảnh và lấy tên file
             $file = $request->file('image');
             $path = public_path('uploads/images');
             $file_name = Common::uploadFile($file, $path);
 
+            // Tạo dữ liệu cho profile mới
             $data = [
                 'name' => $request->input('name'),
                 'title' => $request->input('title'),
@@ -84,30 +90,55 @@ class ProfilesController extends Controller
                 'users_id' => auth()->user()->id,
             ];
         } else {
-            // If updating, we assume the request only contains fields to be updated
-            $data = $request->all();
-
-            // Optionally handle image file if it's in the request
+            // Nếu có profile tồn tại, cập nhật
+            // Kiểm tra xem request có chứa file ảnh mới không
             if ($request->hasFile('image')) {
+                $validator = Validator::make($request->all(), [
+                    'image' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+                ]);
+
+                // Nếu validation không thành công, trả về lỗi
+                if ($validator->fails()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Validation error',
+                        'errors' => $validator->errors(),
+                    ], 400);
+                }
+
+                // Upload file ảnh mới và lấy tên file
                 $file = $request->file('image');
                 $path = public_path('uploads/images');
-                $data['image'] = Common::uploadFile($file, $path);
-            }
-        }
+                $file_name = Common::uploadFile($file, $path);
 
-        // Use updateOrCreate to either update the existing profile or create a new one
-        $profile = Profile::updateOrCreate(
-            ['users_id' => auth()->user()->id],
-            $data
-        );
+                // Cập nhật dữ liệu với file ảnh mới
+                $profile->image = $file_name;
+            }
+
+            // Cập nhật các trường dữ liệu khác
+            $profile->name = $request->input('name', $profile->name);
+            $profile->title = $request->input('title', $profile->title);
+            $profile->phone = $request->input('phone', $profile->phone);
+            $profile->email = $request->input('email', $profile->email);
+            $profile->birthday = $request->input('birthday', $profile->birthday);
+            $profile->gender = $request->input('gender', $profile->gender);
+            $profile->location = $request->input('location', $profile->location);
+            $profile->website = $request->input('website', $profile->website);
+            $profile->users_id = auth()->user()->id;
+            $profile->save();
+
+            // Gán dữ liệu đã cập nhật
+            $data = $profile->toArray();
+        }
 
         return response()->json([
             'success' => true,
             'message' => "Profile saved successfully",
-            'data' => $profile->toArray(),
+            'data' => $data,
             'status_code' => 200
         ]);
     }
+
     /**
      * Display the specified resource.
      */
