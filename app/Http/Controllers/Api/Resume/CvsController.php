@@ -23,7 +23,12 @@ class CvsController extends Controller
             $cv->file_path = $path;
             $cv->save();
 
-            return response()->json(['message' => 'CV đã được tải lên.'], 200);
+            return response()->json([
+                'success' => true,
+                'message' => 'CV uploaded.',
+                'data' => $cv,
+                'status_code' => 200
+            ], 200);
         }
 
         return response()->json(['error' => 'Không tìm thấy tệp CV.'], 400);
@@ -43,8 +48,14 @@ class CvsController extends Controller
         $cv->is_default = true;
         $cv->save();
 
-        return back()->with('success', 'CV đã được đặt làm mặc định.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Success.',
+            'data' => $cv,
+            'status_code' => 200
+        ], 200);
     }
+
 
     public function getDefaultCv(Request $request)
     {
@@ -54,21 +65,31 @@ class CvsController extends Controller
         if ($defaultCv) {
             return response()->json([
                 'success' => true,
-                'defaultCv' => $defaultCv
+                'message' => 'success',
+                'data' => $defaultCv,
+                'status_code' => 200
             ], 200);
         } else {
             return response()->json([
                 'success' => false,
-                'message' => 'Không tìm thấy CV mặc định.'
+                'message' => 'faild.',
+                'status_code' => '404.'
+
             ], 404);
         }
+
     }
 
     // Lấy danh sách tất cả CV của người dùng hiện tại
     public function index()
     {
         $cvs = auth()->user()->cvs;
-        return response()->json($cvs, 200);
+        return response()->json([
+            'success' => true,
+            'message' => 'success',
+            'data' => $cvs,
+            'status_code' => 200,
+        ]);
     }
 
 // Lấy thông tin chi tiết của một CV
@@ -94,7 +115,12 @@ class CvsController extends Controller
 
         $cv->update($request->all());
 
-        return response()->json(['message' => 'CV đã được cập nhật.'], 200);
+        return response()->json([
+            'success' => true,
+            'message' => 'CV đã được cập nhật.',
+            'data' => $cv,
+            'status_code' => 200
+        ], 200);
     }
 
     // Xóa CV
