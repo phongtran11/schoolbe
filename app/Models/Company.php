@@ -55,7 +55,8 @@ class Company extends Model
         return $this->hasMany(Job::class,'company_id','id');
     }
 
-// Similarly, update other method names as necessary.
-
+    public function skills() {
+        return  $this->hasMany(Skill::class,'company_id','id');
+    }
 
 }

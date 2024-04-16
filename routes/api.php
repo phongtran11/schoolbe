@@ -41,6 +41,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [JobsController::class, 'indexShow']);
 Route::get('/jobs/{job}', [JobsController::class, 'showJob']);
 Route::get('/search', [JobsController::class, 'search']);
+Route::get('/companies1', [CompaniesController::class, 'indexShow']);
+Route::get('/companies1/{company}', [CompaniesController::class, 'show']);
 
 //Auth
 Route::post('employer/register', [EmployerRegisterController::class, 'employerRegister']);

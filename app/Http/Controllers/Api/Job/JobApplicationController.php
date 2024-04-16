@@ -23,7 +23,10 @@ class JobApplicationController extends Controller
 
         // Check if the user has a company associated with them
         if (!$user->companies) {
-            return response()->json(['message' => 'Không có thông tin công ty.'], 403);
+            return response()->json([
+                'success' => false,
+                'message' => 'Không có thông tin công ty.'
+            ], 403);
         }
 
         // Get the company ID of the authenticated user
@@ -33,11 +36,40 @@ class JobApplicationController extends Controller
 
         $jobs = Job::with(['applicants' => function ($query) {
             $query->withPivot('status', 'cv'); // Include pivot table fields
-        }])->where('company_id', 1) // Assuming the jobs table has a 'company_id' column
+        }])->where('company_id', $companyId) // Assuming the jobs table has a 'company_id' column
         ->get();
+        $jobsData = $jobs->map(function ($job) {
+            return [
+                'id' => $job->id,
+                'title' => $job->title,
+                'salary' => $job->salary,
+                'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
+                'job_city' => $job->jobcity ? $job->jobcity->pluck('name')->toArray() : null,
+                'skills' => $job->skill->pluck('name')->toArray(),
+                'address' => $job->company ? $job->company->address : null,
+                'description' => $job->description,
+                'status' => $job->status,
+                'skill_experience' => $job->skill_experience,
+                'benefits' => $job->benefits,
+                'last_date' => $job->last_date,
+                'created_at' => $job->created_at->diffForHumans(),
+                'applicants' => $job->applicants->map(function ($applicant) {
+                    return [
+                        'id' => $applicant->id,
+                        'name' => $applicant->name,
+                        'email' => $applicant->email,
+                        'status' => $applicant->pivot->status,
+                        'cv' => $applicant->pivot->cv,
+                    ];
+                }),
+            ];
+        });
 
         return response()->json([
-            'jobs' => $jobs,
+            'success' => true,
+            'message' => 'success',
+            'data' => $jobsData,
+            'status_code' => 200
         ]);
     }
     /**
@@ -92,21 +124,37 @@ class JobApplicationController extends Controller
     {
         $job = Job::find($jobId);
         if (!$job) {
-            return response()->json(['message' => 'Công việc không tồn tại.'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Công việc không tồn tại.',
+                'status_code' => 404,
+            ], 404);
         }
 
         // Check if the authenticated user is the owner of the job
         if ($job->users_id !== Auth::id()) {
-            return response()->json(['message' => 'Bạn không có quyền thực hiện chức năng này.'], 403);
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn không có quyền thực hiện chức năng này.',
+                'status_code' => 403,
+            ], 403);
         }
         $user = User::find($userId);
         if (!$user) {
-            return response()->json(['message' => 'Người dùng không tồn tại.'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Người dùng không tồn tại.',
+                'status_code' => 404
+            ], 404);
         }
 
         $status = $request->input('status');
         if (!in_array($status, ['approved', 'rejected'])) {
-            return response()->json(['message' => 'Trạng thái không hợp lệ.'], 400);
+            return response()->json([
+                'success' => false,
+                'message' => 'Trạng thái không hợp lệ.',
+                'status_code' => 400
+            ], 400);
         }
 
         // Update the status of the application
@@ -119,29 +167,50 @@ class JobApplicationController extends Controller
             Mail::to($user->email)->send(new ApplicationRejected($job, $user));
         }
 
-        return response()->json(['message' => 'Xử lí đơn ứng tuyển thành công.'], 200);
+        return response()->json([
+            'success' => true,
+            'message' => 'Xử lí đơn ứng tuyển thành công.',
+            'status_code' => 200
+        ], 200);
     }
 
     public function toggle(Request $request, $id)
     {
-        // Find the job by ID
-        $job = Job::findOrFail($id);
+        try {
+            // Find the job by ID
+            $job = Job::findOrFail($id);
 
-        // Check if the authenticated user is the owner of the job
-        if ($job->users_id !== Auth::id()) {
-            return response()->json(['message' => 'Bạn không có quyền thực hiện chức năng này.'], 403);
+            // Check if the authenticated user is the owner of the job
+            if ($job->users_id !== Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn không có quyền thực hiện chức năng này.',
+                    'status_code' => 403
+                ], 403);
+            }
+
+            // Toggle the status
+            $job->status = !$job->status;
+
+            // Save the changes
+            $job->save();
+
+            // Return a JSON response indicating success
+            return response()->json([
+                'success' => true,
+                'message' => 'Trạng thái đã được cập nhật thành công!',
+                'status_code' => 200
+            ], 200);
+        } catch (\Exception $e) {
+            // Handle the case where an exception occurred
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi cập nhật trạng thái.',
+                'error' => $e->getMessage(),
+                'status_code' => 500
+            ], 500);
         }
-
-        // Toggle the status
-        $job->status = !$job->status;
-
-        // Save the changes
-        $job->save();
-
-        // Return a JSON response indicating success
-        return response()->json(['message' => 'Trạng thái đã được cập nhật thành công!'], 200);
     }
-
 
 }
 

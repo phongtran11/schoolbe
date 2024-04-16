@@ -21,32 +21,39 @@ class CompaniesController extends Controller
      */
     public function index()
     {
-        $companies = Company::with(['companytype', 'companysize', 'country', 'city'])->get();
+        $user = auth()->user();
+
+        // Retrieve companies associated with the user
+        $companies = $user->companies()->with(['companytype', 'companysize', 'country', 'city', 'jobs' => function ($query) use ($user) {
+            $query->where('status', 1);
+        }])->get();
+
+        // Map the company data as before
         $companiesdata = $companies->map(function ($company) {
             $companyType = optional($company->companytype)->name;
             $companySize = optional($company->companysize)->name;
             $country = optional($company->country)->name;
             $city = optional($company->city)->name;
-
             return [
                 'id' => $company->id,
-                'name' => $company->name,
-                'company_type' => $companyType,
-                'company_size' => $companySize,
                 'country' => $country,
                 'city' => $city,
+                'companyType' => $companyType,
+                'companySize' => $companySize,
+                'name' => $company->name,
                 'Working_days' => $company->Working_days,
                 'Overtime_policy' => $company->Overtime_policy,
                 'webstie' => $company->webstie,
-                'logo' => $company->logo,
+                'logo' => asset('uploads/images/' . $company->logo), // Assuming the logo is stored in the 'storage' folder
                 'facebook' => $company->facebook,
+                'address' => $company->address,
                 'description' => $company->description,
-                'address' => $company->address
             ];
         });
+
         return response()->json([
             'success' => true,
-            'message' => 'Company details retrieved successfully.',
+            'message' => 'successfully.',
             'companies' => $companiesdata
         ], 200);
     }
@@ -111,14 +118,37 @@ class CompaniesController extends Controller
      */
     public function show(Company $company)
     {
-        $country = $company->country_id;
-        $country = Country::find($country);
+        // Eager load the relationships to avoid N+1 problem
+        $company->load(['companytype', 'companysize', 'country', 'city']);
 
+        // Use optional to avoid trying to get properties on a null object
+        $companyType = optional($company->companytype)->name;
+        $companySize = optional($company->companysize)->name;
+        $country = optional($company->country)->name;
+        $city = optional($company->city)->name;
+
+        // Build the detailed company data
+        $companyDetails = [
+            'id' => $company->id,
+            'name' => $company->name,
+            'company_type' => $companyType,
+            'company_size' => $companySize,
+            'country' => $country,
+            'city' => $city,
+            'Working_days' => $company->Working_days,
+            'Overtime_policy' => $company->Overtime_policy,
+            'webstie' => $company->webstie,
+            'logo' => asset('uploads/images/' . $company->logo), // Assuming the logo is stored in the 'storage' folder
+            'facebook' => $company->facebook,
+            'description' => $company->description,
+            'address' => $company->address
+        ];
+
+        // Return the response with the company details
         return response()->json([
             'success' => true,
-            'message' => 'Company locations retrieved successfully.',
-            'company' => $company,
-            'country' => $country
+            'message' => 'Company details retrieved successfully.',
+            'company' => $companyDetails
         ], 200);
     }
 
@@ -185,5 +215,30 @@ class CompaniesController extends Controller
                 'message' => 'No logo file provided.',
             ], 400);
         }
+    }
+
+    public function indexShow(Request $request){
+        $companies = Company::with(['companytype', 'companysize', 'country', 'city', 'jobs' => function ($query) {
+            $query->where('status', 1); // Lọc các công việc có trạng thái là 1
+        }])->get();        $companiesdata = $companies->map(function ($company) {
+            $companyType = optional($company->companytype)->name;
+            $companySize = optional($company->companysize)->name;
+            $country = optional($company->country)->name;
+            $city = optional($company->city)->name;
+            $job = optional($company->jobs);
+            return [
+                'id' => $company->id,
+                'name' => $company->name,
+                'country' => $country,
+                'city' => $city,
+                'logo' => asset('uploads/images/' . $company->logo), // Assuming the logo is stored in the 'storage' folder
+                'jobs' => $job->count(),
+            ];
+        });
+        return response()->json([
+            'success' => true,
+            'message' => 'successfully.',
+            'companies' => $companiesdata
+        ], 200);
     }
 }

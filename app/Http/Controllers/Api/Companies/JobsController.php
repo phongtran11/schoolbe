@@ -30,12 +30,17 @@ class JobsController extends Controller
                 return [
                     'id' => $job->id,
                     'title' => $job->title,
-                    'company' => $job->company ? $job->company->name : null,
-                    'salary' => $job->salary,
+//                    'company' => $job->company ? $job->company->name : null,
                     'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
                     'job_city' => $job->jobcity ? $job->jobcity->pluck('name')->toArray() : null,
-
+                    'salary' => $job->salary,
+                    'status' => $job->status,
+                    'featured' => $job->featured,
+                    'address' => $job->address,
+                    'description' => $job->description,
                     'skills' => $job->skill->pluck('name')->toArray(),
+                    'skill_experience' => $job->skill_experience,
+                    'benefits' => $job->benefits,
                     'address' => $job->company ? $job->company->address : null,
                     'last_date' => $job->last_date,
                     'created_at' => $job->created_at->diffForHumans(),
@@ -53,6 +58,7 @@ class JobsController extends Controller
                     'prev' => $jobs->previousPageUrl(),
                     'next' => $jobs->nextPageUrl(),
                 ],
+                'status_code' => 200
             ]);
         }
 
@@ -60,6 +66,7 @@ class JobsController extends Controller
         return response()->json([
             'success' => false,
             'message' => 'User does not have a company.',
+            'status_code' => 404
         ], 404);
     }
 
@@ -92,6 +99,7 @@ class JobsController extends Controller
                 'success' => false,
                 'message' => 'Validation error',
                 'errors' => $validator->errors(),
+                'status_code' => 400
             ], 400);
         }
 
@@ -185,9 +193,9 @@ class JobsController extends Controller
             'description' => $job->description,
             'benefits' => $job->benefits,
             'last_date' => $job->last_date,
-//            'job_type' => $job->jobtype ? $job->jobtype->name : null,
-//            'jobcity' => $job->jobcity ? $job->jobcity->name : null,
-//            'skills' => $job->skills->pluck('name')->toArray(),
+            'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
+            'job_city' => $job->jobcity ? $job->jobcity->pluck('name')->toArray() : null,
+            'skills' => $job->skill->pluck('name')->toArray(),
             'address' => $job->address,
             'created_at' => $job->created_at->diffForHumans(),
         ];
@@ -197,6 +205,7 @@ class JobsController extends Controller
             'success' => true,
             'message' => 'success',
             'data' => $jobData,
+            'status_code' => 200
         ]);
     }
 
@@ -205,10 +214,11 @@ class JobsController extends Controller
      */
     public function update(Request $request, Job $job)
     {
-        if ($request->user()->id !== $job->company->user_id) {
+        if ($request->user()->id !== $job->company->users_id ) {
             return response()->json([
                 'success' => false,
                 'message' => 'Bạn không có quyền chỉnh sửa job này.',
+                'status_code' => 403
             ], 403); // 403 là mã lỗi "Forbidden" khi người dùng không có quyền truy cập
         }
         try {
@@ -259,6 +269,7 @@ class JobsController extends Controller
                     'job' => $job,
                     'job_skills' => $job->jobSkills,
                 ],
+                'status_code' => 200
             ]);
         } catch (\Exception $e) {
             // Rollback the transaction
@@ -283,6 +294,7 @@ class JobsController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Job deleted successfully',
+            'status_code' => 200
         ]);
     }
 
@@ -311,39 +323,54 @@ class JobsController extends Controller
     public function apply(Request $request, $id)
     {
         $job = Job::find($id);
-        if (! $job) {
+        if (!$job) {
             return response()->json(['message' => 'Công việc không tồn tại.'], 404);
         }
 
         $user = Auth::guard('sanctum')->user();
-        if (! $user) {
+        if (!$user) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
         if ($job->users()->where('users.id', $user->id)->exists()) {
-            return response()->json(['message' => 'Bạn đã ứng tuyển công việc này rồi.'], 409);
+            return response()->json([
+                'message' => 'Bạn đã ứng tuyển công việc này rồi.',
+                'status_code' => 409
+            ], 409);
         }
 
-        // Process the CV file
+        // Check if a new CV file was uploaded
         if ($request->hasFile('cv')) {
             $cv = $request->file('cv');
-            $cvFileName = time().'_'.$cv->getClientOriginalName();
+            $cvFileName = time() . '_' . $cv->getClientOriginalName();
             $cv->storeAs('cv', $cvFileName); // Store the CV file in storage/cv directory
         } else {
-            $cvFileName = null;
+            // No new CV file was uploaded, attempt to use the default CV
+            $defaultCv = $user->cvs()->where('is_default', true)->first();
+            $cvFileName = $defaultCv ? $defaultCv->file_path : null;
         }
 
-        // Gửi email thông báo về việc ứng tuyển công việc
-        Mail::to($user->email)->send(new JobApplied($job, $user, $cvFileName));
+        if (!$cvFileName) {
+            return response()->json([
+                'message' => 'Không có CV mặc định và không có CV mới được tải lên.',
+                'status_code' => 400
+            ], 400);
+        }
 
+        // Continue with the application process...
+        Mail::to($user->email)->send(new JobApplied($job, $user, $cvFileName));
         $job->users()->attach($user->id, ['status' => 'pending', 'cv' => $cvFileName]);
 
-        return response()->json(['message' => 'Ứng tuyển công việc thành công.'], 200);
+        return response()->json(
+            [
+                'message' => 'Ứng tuyển công việc thành công.',
+                'status_code' => 200,
+            ], 200);
     }
 
 
 
-    public function applicant(): \Illuminate\Http\JsonResponse
+    public function applicant()
     {
         $user = Auth::guard('sanctum')->user();
         if (! $user) {
@@ -353,9 +380,9 @@ class JobsController extends Controller
         $appliedJobs = $user->jobs()->withPivot('status')->get();
 
         $formattedJobs = $appliedJobs->map(function ($job) {
-            $company = $job->company()->first(); // Lấy thông tin của công ty
-            $jobType = $job->jobType()->first(); // Lấy thông tin của loại công việc
-            $city = $job->jobcity()->first(); // Lấy thông tin của thành phố
+            $company = $job->company()->first();
+            $jobType = $job->jobType()->first();
+            $city = $job->jobcity()->first();
             $lastDate = Carbon::createFromFormat('Y-m-d', $job->last_date);
             $daysRemaining = $lastDate->diffInDays(Carbon::now());
             return [
@@ -373,13 +400,15 @@ class JobsController extends Controller
                 'benefits' => $job->benefits,
                 'last_date' => $job->last_date,
                 'last_date' => $daysRemaining,
-
-                'created_at' => $job->created_at,
-                'updated_at' => $job->updated_at,
             ];
         });
 
-        return response()->json($formattedJobs, 200);
+        return response()->json([
+            'success' => true,
+            'message' => 'success',
+            'data' => $formattedJobs,
+            'status_code' => 200
+        ], 200);
     }
 
 
@@ -436,6 +465,7 @@ class JobsController extends Controller
                 'prev' => $jobs->previousPageUrl(),
                 'next' => $jobs->nextPageUrl(),
             ],
+            'status_code' => 200
         ]);
     }
 
@@ -461,7 +491,12 @@ class JobsController extends Controller
             ];
         });
 
-        return response()->json(['saved_jobs' => $savedJobsData], 200);
+        return response()->json([
+            'success' => true,
+            'message' => 'Saved jobs',
+            'data' => $savedJobsData,
+            'status_code' => 200
+        ], 200);
     }
 
     /**
@@ -487,7 +522,11 @@ class JobsController extends Controller
         } else {
             // Nếu công việc chưa được thêm vào danh sách yêu thích, thực hiện thêm mới
             $user->favorites()->syncWithoutDetaching([$job->id]);
-            return response()->json(['message' => 'Job saved to favorites'], 200);
+            return response()->json([
+                 'success' => 'true',
+                 'message' => 'Job saved to favorites',
+                 'status_code' => 200
+            ], 200);
         }
     }
 
@@ -501,7 +540,12 @@ class JobsController extends Controller
         $user = $request->user();
         $user->favorites()->detach($job->id);
 
-        return response()->json(['message' => 'Job removed from favorites'], 200);
+        return response()->json([
+            'success' => 'true',
+            'message' => 'Job removed from favorites',
+            'status_code' => 200,
+
+        ], 200);
     }
 
     public function indexShow()
