@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * @method map(\Closure $param)
+ */
 class Job extends Model
 {
     use HasFactory;
@@ -64,4 +67,5 @@ class Job extends Model
     // In your Job model
 
 // Update other relationships if necessary.
+
 }

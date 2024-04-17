@@ -136,13 +136,24 @@ class JobsController extends Controller
             // Commit the transaction
             \DB::commit();
 
+            $jobData = [
+                'id' => $job->id,
+                'title' => $job->title,
+                'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
+                'salary' => $job->salary,
+                'status' => $job->status ? 'active' : 'inactive',
+                'featured' => $job->featured ?  'active' : 'inactive',
+                'address' => $job->address,
+                'description' => $job->description,
+                'skill_experience' => $job->skill_experience,
+                'last_date' => $job->last_date,
+                'benefits' => $job->benefits,
+                'job_skills' => $job->jobSkills->pluck('name')->toArray(),
+            ];
             return response()->json([
                 'success' => true,
                 'message' => 'Job and job skills created successfully.',
-                'data' => [
-                    'job' => $job,
-                    'job_skills' => $job->jobSkills,
-                ],
+                'data' => $jobData,
             ]);
         } catch (\Exception $e) {
             // Rollback the transaction
@@ -262,13 +273,25 @@ class JobsController extends Controller
             // Commit the transaction
             \DB::commit();
 
+            $jobData = [
+                'id' => $job->id,
+                'title' => $job->title,
+                'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
+                'salary' => $job->salary,
+                'status' => $job->status ? 'active' : 'inactive',
+                'featured' => $job->featured ?  'active' : 'inactive',
+                'address' => $job->address,
+                'description' => $job->description,
+                'skill_experience' => $job->skill_experience,
+                'last_date' => $job->last_date,
+                'benefits' => $job->benefits,
+                'job_skills' => $job->jobSkills->pluck('name')->toArray(),
+            ];
+
             return response()->json([
                 'success' => true,
                 'message' => 'Job and job skills updated successfully.',
-                'data' => [
-                    'job' => $job,
-                    'job_skills' => $job->jobSkills,
-                ],
+                'data' => $jobData,
                 'status_code' => 200
             ]);
         } catch (\Exception $e) {
