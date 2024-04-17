@@ -54,7 +54,7 @@ class CompaniesController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'successfully.',
-            'companies' => $companiesdata
+            'data' => $companiesdata
         ], 200);
     }
 
@@ -103,11 +103,31 @@ class CompaniesController extends Controller
             $data['users_id'] = auth()->user()->id;
             $company = Company::create($data);
         }
+        $companyType = optional($company->companytype)->name;
+        $companySize = optional($company->companysize)->name;
+        $country = optional($company->country)->name;
+        $city = optional($company->city)->name;
+
+        $comapyData = [
+            'id' => $company->id,
+            'country' => $country,
+            'city' => $city,
+            'companyType' => $companyType,
+            'companySize' => $companySize,
+            'name' => $company->name,
+            'Working_days' => $company->Working_days,
+            'Overtime_policy' => $company->Overtime_policy,
+            'webstie' => $company->webstie,
+            'logo' => asset('uploads/images/' . $company->logo), // Assuming the logo is stored in the 'storage' folder
+            'facebook' => $company->facebook,
+            'address' => $company->address,
+            'description' => $company->description,
+        ];
 
         return response()->json([
             'success'   => true,
             'message'   => "success update",
-            "data" => $company
+            "data" => $comapyData
         ]);
     }
     /**
@@ -148,7 +168,7 @@ class CompaniesController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Company details retrieved successfully.',
-            'company' => $companyDetails
+            'data' => $companyDetails
         ], 200);
     }
 
@@ -238,7 +258,7 @@ class CompaniesController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'successfully.',
-            'companies' => $companiesdata
+            'data' => $companiesdata
         ], 200);
     }
 }
