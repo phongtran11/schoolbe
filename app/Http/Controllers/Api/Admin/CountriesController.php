@@ -19,7 +19,8 @@ class CountriesController extends Controller
         return response()->json([
             'success'   => true,
             'message'   => "success",
-            "data" => $country
+            "data" => $country,
+            'status_code' => 200
         ]);
     }
 
@@ -54,7 +55,8 @@ class CountriesController extends Controller
         return response()->json([
             'success'   => true,
             'message'   => "success",
-            "data" => $country
+            "data" => $country,
+            'status_code' => 200
         ]);
 
 
@@ -69,8 +71,10 @@ class CountriesController extends Controller
             'success' => true,
             'message' => 'success',
             'data' => [
+                'id' => $country->id,
                 'name' => $country->name,
             ],
+            'status_code' => 200
         ]);
     }
 
@@ -79,7 +83,19 @@ class CountriesController extends Controller
      */
     public function update(Request $request, Country $country)
     {
-        //
+        $user = auth()->user()->id;
+        $data = $request->all();
+        $country->update($data);
+
+        return response()->json([
+            'success'   => true,
+            'message'   => "success",
+            'data' => $country,
+            'status_code' => 200
+        ]);
+
+
+
     }
 
     /**
@@ -87,6 +103,11 @@ class CountriesController extends Controller
      */
     public function destroy(Country $country)
     {
-        //
+        $country->delete();
+        return response()->json([
+            'success' => true,
+            'message' => 'Country deleted successfully',
+            'status_code' => 200
+        ]);
     }
 }

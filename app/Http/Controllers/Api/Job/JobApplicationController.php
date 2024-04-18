@@ -42,15 +42,6 @@ class JobApplicationController extends Controller
             return [
                 'id' => $job->id,
                 'title' => $job->title,
-                'salary' => $job->salary,
-                'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
-                'job_city' => $job->jobcity ? $job->jobcity->pluck('name')->toArray() : null,
-                'skills' => $job->skill->pluck('name')->toArray(),
-                'address' => $job->company ? $job->company->address : null,
-                'description' => $job->description,
-                'status' => $job->status,
-                'skill_experience' => $job->skill_experience,
-                'benefits' => $job->benefits,
                 'last_date' => $job->last_date,
                 'created_at' => $job->created_at->diffForHumans(),
                 'applicants' => $job->applicants->map(function ($applicant) {
@@ -59,7 +50,7 @@ class JobApplicationController extends Controller
                         'name' => $applicant->name,
                         'email' => $applicant->email,
                         'status' => $applicant->pivot->status,
-                        'cv' => $applicant->pivot->cv,
+                        'cv' => $applicant->pivot->cv ? asset('path/to/cv/' . $applicant->pivot->cv) : null,
                     ];
                 }),
             ];
@@ -91,10 +82,60 @@ class JobApplicationController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(job_user $job_user)
+    /**
+     * Display the specified resource.
+     */
+    public function show($jobId)
     {
-        //
+        $user = Auth::user(); // Get the currently authenticated user
+
+        // Check if the user has a company associated with them
+        if (!$user->companies) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không có thông tin công ty.',
+            ], 403);
+        }
+
+        // Get the company ID of the authenticated user
+        $companyId = $user->companies->id;
+
+        // Find the job by ID and ensure it belongs to the company of the authenticated user
+        $job = Job::with(['applicants' => function ($query) {
+            $query->withPivot('status', 'cv'); // Include pivot table fields
+        }])->where('company_id', $companyId) // Assuming the jobs table has a 'company_id' column
+        ->find($jobId);
+
+        if (!$job) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy công việc hoặc bạn không có quyền truy cập vào công việc này.',
+            ], 404);
+        }
+
+        $jobData = [
+            'id' => $job->id,
+            'title' => $job->title,
+            'created_at' => $job->created_at->diffForHumans(),
+            'applicants' => $job->applicants->map(function ($applicant) {
+                return [
+                    'id' => $applicant->id,
+                    'name' => $applicant->name,
+                    'email' => $applicant->email,
+                    'status' => $applicant->pivot->status,
+                    'cv' => $applicant->pivot->cv ? asset('path/to/cv/' . $applicant->pivot->cv) : null,
+                ];
+            }),
+        ];
+
+        return response()->json([
+            'success' => true,
+            'message' => 'success',
+            'data' => $jobData,
+            'status_code' => 200
+        ]);
     }
+
 
     /**
      * Show the form for editing the specified resource.
@@ -153,6 +194,7 @@ class JobApplicationController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Trạng thái không hợp lệ.',
+                'data' => ['status' => $status],
                 'status_code' => 400
             ], 400);
         }
@@ -167,12 +209,34 @@ class JobApplicationController extends Controller
             Mail::to($user->email)->send(new ApplicationRejected($job, $user));
         }
 
+        // Fetch updated job data
+        $job = Job::with(['applicants' => function ($query) {
+            $query->withPivot('status', 'cv'); // Include pivot table fields
+        }])->find($jobId);
+
+        $jobData = [
+            'id' => $job->id,
+            'title' => $job->title,
+            'created_at' => $job->created_at->diffForHumans(),
+            'applicants' => $job->applicants->map(function ($applicant) {
+                return [
+                    'id' => $applicant->id,
+                    'name' => $applicant->name,
+                    'email' => $applicant->email,
+                    'status' => $applicant->pivot->status,
+                    'cv' => $applicant->pivot->cv ? asset('path/to/cv/' . $applicant->pivot->cv) : null,
+                ];
+            }),
+        ];
+
         return response()->json([
             'success' => true,
             'message' => 'Xử lí đơn ứng tuyển thành công.',
+            'data' => $jobData,
             'status_code' => 200
         ], 200);
     }
+
 
     public function toggle(Request $request, $id)
     {

@@ -50,9 +50,17 @@ class EmployerRegisterController extends Controller
 
             $token = $user->createToken('auth_token')->plainTextToken;
 
+            $userData = [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ];
             return response()->json([
                 'access_token' => $token,
                 'token_type' => 'Bearer',
+                'user' => $userData, // Optionally, include user information
+                'status_code' => 200,
+                'message' => 'Registration successful.'
             ]);
         } catch (\Exception $e) {
             \Log::error($e->getMessage());

@@ -19,7 +19,8 @@ class CitiesController extends Controller
         return response()->json([
             'success'   => true,
             'message'   => "success",
-            "data" => $city
+            "data" => $city,
+            'status_code' => 200
         ]);
     }
 
@@ -46,6 +47,7 @@ class CitiesController extends Controller
                 'success' => false,
                 'message' => 'Validation error',
                 'errors' => $validator->errors(),
+                'status_code' => 400
             ], 400);
         }
 
@@ -55,7 +57,8 @@ class CitiesController extends Controller
         return response()->json([
             'success'   => true,
             'message'   => "success",
-            "data" => $city
+            "data" => $city,
+            'status_code' => 200
         ]);
 
     }
@@ -69,8 +72,10 @@ class CitiesController extends Controller
             'success' => true,
             'message' => 'success',
             'data' => [
+                'id' => $city->id,
                 'name' => $city->name,
             ],
+            'status_code' => 200
         ]);
 
     }
@@ -90,6 +95,7 @@ class CitiesController extends Controller
             'success' => true,
             'message' => 'City updated successfully',
             'data' => $city,
+            'status_code' => 200
         ]);
 
     }

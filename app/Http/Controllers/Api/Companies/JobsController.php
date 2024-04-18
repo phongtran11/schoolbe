@@ -41,7 +41,6 @@ class JobsController extends Controller
                     'skills' => $job->skill->pluck('name')->toArray(),
                     'skill_experience' => $job->skill_experience,
                     'benefits' => $job->benefits,
-                    'address' => $job->company ? $job->company->address : null,
                     'last_date' => $job->last_date,
                     'created_at' => $job->created_at->diffForHumans(),
                 ];
@@ -585,8 +584,7 @@ class JobsController extends Controller
                 'company' => $job->company ? $job->company->name : null,
                 'salary' => $job->salary,
                 'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
-                'jobcity' => $job->jobcity ? $job->jobcity->pluck('name')->toArray() : null,
-
+                'job_city' => $job->jobcity ? $job->jobcity->pluck('name')->toArray() : null,
                 'skills' => $job->skill->pluck('name')->toArray(),
                 'address' => $job->company->address,
                 'last_date' => $job->last_date,
@@ -604,34 +602,78 @@ class JobsController extends Controller
                 'prev' => $jobs->previousPageUrl(),
                 'next' => $jobs->nextPageUrl(),
             ],
+            'status_code' => 200
         ]);
     }
 
 
     public function showJob(Job $job)
     {
-        $job->load('jobtype', 'skill', 'company','jobcity');
+        // If the job does not exist, return a 404 response
+        if (!$job) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Job not found',
+                'status_code' => 404
+            ]);
+        }
 
-        $jobData = [
-            'id' => $job->id,
-            'title' => $job->title,
-            'company' => $job->company ? $job->company->name : null,
-            'salary' => $job->salary,
-            'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
-            'jobcity' => $job->jobcity ? $job->jobcity->pluck('name')->toArray() : null,
-            'skills' => $job->skill->pluck('name')->toArray(),
-            'address' => $job->company->address,
-            'description' => $job->description,
-            'skill_experience' => $job->skill_experience,
-            'benefits' => $job->benefits,
-            'last_date' => $job->last_date,
-            'created_at' => $job->created_at->diffForHumans(),
-        ];
+        try {
+            $job->load('jobtype', 'skill', 'company', 'jobcity');
 
-        return response()->json([
-            'success' => true,
-            'message' => 'success',
-            'data' => $jobData,
-        ]);
+            // Prepare job data
+            $jobData = [
+                'id' => $job->id,
+                'title' => $job->title,
+                'company' => $job->company ? $job->company->name : null,
+                'salary' => $job->salary,
+                'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
+                'jobcity' => $job->jobcity ? $job->jobcity->pluck('name')->toArray() : null,
+                'skills' => $job->skill->pluck('name')->toArray(),
+                'address' => $job->company->address,
+                'description' => $job->description,
+                'skill_experience' => $job->skill_experience,
+                'benefits' => $job->benefits,
+                'last_date' => $job->last_date,
+                'created_at' => $job->created_at->diffForHumans(),
+            ];
+
+            // Get job recommendations and format them
+            $jobRecommendations = $this->jobRecommend($job)->take(5)->map(function ($recommendedJob) {
+                return [
+                    'id' => $recommendedJob->id,
+                    'title' => $recommendedJob->title,
+                    'company' => $recommendedJob->company ? $recommendedJob->company->name : null,
+                    'salary' => $recommendedJob->salary,
+                    'job_type' => $recommendedJob->jobtype ? $recommendedJob->jobtype->pluck('name')->toArray() : null,
+                    'job_city' => $recommendedJob->jobcity ? $recommendedJob->jobcity->pluck('name')->toArray() : null,
+                    'skills' => $recommendedJob->skill->pluck('name')->toArray(),
+                    'address' => $recommendedJob->company->address,
+                    'last_date' => $recommendedJob->last_date,
+                    'created_at' => $recommendedJob->created_at->diffForHumans(),
+                ];
+            })->toArray();
+
+            // Return the successful response with job details and recommendations
+            return response()->json([
+                'success' => true,
+                'message' => 'Job details retrieved successfully',
+                'data' => [
+                    'job' => $jobData,
+                    'jobRecommendations' => $jobRecommendations,
+                ],
+                'status_code' => 200
+            ]);
+
+        } catch (\Exception $e) {
+            // Return a response indicating there was an error
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while retrieving job details',
+                'error' => $e->getMessage(),
+                'status_code' => 500
+            ]);
+        }
     }
+
 }

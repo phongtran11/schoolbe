@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Models\Companysize;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Validator;
+
 use Illuminate\Http\Request;
 
 class CompanysizesController extends Controller
@@ -17,7 +19,8 @@ class CompanysizesController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'success',
-            'data' => $companysize
+            'data' => $companysize,
+            'status_code' => 200
         ]);
     }
 
@@ -26,7 +29,31 @@ class CompanysizesController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $data = [
+            'name' => $request->input('name'),
+        ];
+
+        $validator = Validator::make($data, [
+            'name' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 400);
+        }
+
+        $data = $validator->validated();
+        $Companysize = Companysize::create($data);
+
+        return response()->json([
+            'success'   => true,
+            'message'   => "success",
+            "data" => $Companysize,
+            'status_code' => 200
+        ]);
     }
 
     /**
@@ -38,8 +65,10 @@ class CompanysizesController extends Controller
             'success' => true,
             'message' => 'success',
             'data' => [
+                'id' => $companysize->id,
                 'name' => $companysize->name,
             ],
+            'status_code' => 200
         ]);
     }
 
@@ -57,6 +86,7 @@ class CompanysizesController extends Controller
             'success' => true,
             'message' => 'Companysize updated successfully',
             'data' => $companysize,
+            'status_code' => 200
         ]);
     }
 

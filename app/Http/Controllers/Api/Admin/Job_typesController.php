@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Models\aboutme;
 use App\Models\job_type;
 use App\Http\Controllers\Controller;
+use App\Models\Jobtype;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -15,12 +16,13 @@ class Job_typesController extends Controller
      */
     public function index()
     {
-        $job_type = job_type::all();
+        $job_type = Jobtype::all();
         return response()->json([
             'success'   => true,
             'message'   => "success",
             "data" => $job_type
-        ]);}
+        ]);
+    }
 
     /**
      * Store a newly created resource in storage.
@@ -44,7 +46,7 @@ class Job_typesController extends Controller
         }
 
         $data = $validator->validated();
-        $job_type = job_type::create($data);
+        $job_type = Jobtype::create($data);
 
         return response()->json([
             'success'   => true,
@@ -58,8 +60,9 @@ class Job_typesController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(job_type $job_type)
+    public function show(Jobtype $job_type)
     {
+        dd($job_type->id);
         return response()->json([
             'success' => true,
             'message' => 'success',

@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Admin\CompanysizesController;
 use App\Http\Controllers\Api\Admin\CompanytypesController;
 use App\Http\Controllers\Api\Admin\CountriesController;
 use App\Http\Controllers\Api\Admin\Job_typesController;
+use App\Http\Controllers\Api\Admin\JobtypesControllerController;
 use App\Http\Controllers\Api\Admin\LocationsController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Companies\CompaniesController;
@@ -94,8 +95,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     //Admin
-    Route::resource('Admin/jobTypes', Job_typesController::class);
-    Route::resource('Admin/locations', LocationsController::class);
+    Route::resource('Admin/jobtypes', JobtypesControllerController::class);
     Route::resource('Admin/country', CountriesController::class);
     Route::resource('Admin/companyType', CompanytypesController::class);
     Route::resource('Admin/companySize', CompanysizesController::class);

@@ -127,7 +127,8 @@ class CompaniesController extends Controller
         return response()->json([
             'success'   => true,
             'message'   => "success update",
-            "data" => $comapyData
+            "data" => $comapyData,
+            'status_code'    => 200
         ]);
     }
     /**

@@ -61,9 +61,7 @@ class CompanytypesController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'success',
-            'data' => [
-                'name' => $companytype->name,
-            ],
+            'data' => $companytype,
         ]);
     }
 
