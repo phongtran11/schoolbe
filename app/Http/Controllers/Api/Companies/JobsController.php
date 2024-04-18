@@ -450,6 +450,14 @@ class JobsController extends Controller
         $jobs = Job::with('jobtype', 'skill', 'company')
             ->where('title', 'like', "%{$searchQuery}%")
             ->orWhere('description', 'like', "%{$searchQuery}%")
+            ->orWhere('address', 'like', "%{$searchQuery}%")
+            ->orWhere('benefits', 'like', "%{$searchQuery}%")
+            ->orWhere('last_date', 'like', "%{$searchQuery}%")
+            ->orWhere('salary', 'like', "%{$searchQuery}%")
+            ->orWhere('skill_experience', 'like', "%{$searchQuery}%")
+            ->orWhereHas('jobcity', function ($query) use ($searchQuery) {
+                $query->where('name', 'like', "%{$searchQuery}%");
+            })
             ->orWhereHas('skill', function ($query) use ($searchQuery) {
                 $query->where('name', 'like', "%{$searchQuery}%");
             })

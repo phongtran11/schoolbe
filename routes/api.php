@@ -78,6 +78,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware(CheckUserRole::class)->group(function () {
         Route::resource('job', JobsController::class);
+        Route::post('/processApplication/{jobId}/{userId}', [JobApplicationController::class, 'processApplication']);
+        Route::get('/applications', [JobApplicationController::class, 'index']);
+        Route::post('/{id}/toggle', [JobApplicationController::class, 'toggle']);
+        Route::get('/getStatistics', [JobApplicationController::class, 'getStatistics']);
     });
 
     //favorites Job User
@@ -88,17 +92,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     //JobAdmin
-    Route::post('/{id}/toggle', [JobApplicationController::class, 'toggle']);
-    Route::get('/applications', [JobApplicationController::class, 'index']);
-    Route::post('/processApplication/{jobId}/{userId}', [JobApplicationController::class, 'processApplication']);
-    Route::get('/getStatistics', [JobApplicationController::class, 'getStatistics']);
 
 
-    //Admin
-    Route::resource('Admin/jobtypes', JobtypesControllerController::class);
-    Route::resource('Admin/country', CountriesController::class);
-    Route::resource('Admin/companyType', CompanytypesController::class);
-    Route::resource('Admin/companySize', CompanysizesController::class);
-    Route::Delete('logout', [AuthController::class, 'logout']);
-
+    Route::middleware(\App\Http\Middleware\CheckAdminRole::class)->group(function () {
+        Route::resource('Admin/jobtypes', JobtypesControllerController::class);
+        Route::resource('Admin/country', CountriesController::class);
+        Route::resource('Admin/companyType', CompanytypesController::class);
+        Route::resource('Admin/companySize', CompanysizesController::class);
+        Route::Delete('logout', [AuthController::class, 'logout']);
+    });
 });
