@@ -60,12 +60,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::resource('profiles/projects', ProjectsController::class);
     Route::resource('profiles/getResume', GetResumeController::class);
     Route::resource('profiles/experiences', ExperiencesController::class);
-    Route::post('/upload-cv', [\App\Http\Controllers\Api\Resume\CvsController::class, 'upload']);
-    Route::apiResource('cvs', 'App\Http\Controllers\Api\Resume\CvsController');
+    Route::post('/upload-cv', [CvsController::class, 'upload']);
+    Route::resource('cvs', CvsController::class);
 
 
     // Route cho việc đặt CV mặc định
-    Route::get('/default-cv',  [\App\Http\Controllers\Api\Resume\CvsController::class, 'getDefaultCv']);
+    Route::get('/default-cv',  [CvsController::class, 'getDefaultCv']);
     Route::put('/cvs/{cv}/set-default', [CvsController::class, 'setDefault'])->name('cvs.set-default');
     //Company
     Route::resource('companies', CompaniesController::class);
