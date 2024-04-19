@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('skillscopamies', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('users_id');
+            $table->foreignId('company_id');
             $table->string('name');
             $table->string('details')->nullable();
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
