@@ -15,6 +15,6 @@ class Companyskill extends Model
 
     public function company()
     {
-        return $this->belongsTo(Company::class,'company_id','id');
+        return $this->hasOne(Company::class,'company_id','id');
     }
 }

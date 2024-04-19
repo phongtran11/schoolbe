@@ -70,6 +70,7 @@ Route::middleware('auth:sanctum')->group(function () {
     //Company
     Route::resource('companies', CompaniesController::class);
     Route::resource('companies/location', CompanyLocationsController::class);
+    Route::resource('company/skills', \App\Http\Controllers\Api\Companies\CompaniesSkillsController::class);
 
     //Apply
 

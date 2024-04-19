@@ -24,7 +24,7 @@ class CompaniesController extends Controller
         $user = auth()->user();
 
         // Retrieve companies associated with the user
-        $companies = $user->companies()->with(['companytype', 'companysize', 'country', 'city', 'jobs' => function ($query) use ($user) {
+        $companies = $user->companies()->with(['companytype', 'companysize', 'country', 'city', 'jobs', 'skills' => function ($query) use ($user) {
             $query->where('status', 1);
         }])->get();
 
@@ -34,6 +34,8 @@ class CompaniesController extends Controller
             $companySize = optional($company->companysize)->name;
             $country = optional($company->country)->name;
             $city = optional($company->city)->name;
+            $skills = optional($company->skills)->name;
+
             return [
                 'id' => $company->id,
                 'country' => $country,
@@ -64,15 +66,15 @@ class CompaniesController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'company_size_id' => 'required',
-            'company_type_id' => 'required',
-            'name' => 'required',
-            'Working_days' => 'required',
-            'Overtime_policy' => 'required',
-            'webstie' => 'required',
-//            'logo' => 'required',
-            'facebook' => 'required',
-            'description' => 'required',
+//            'company_size_id' => 'required',
+//            'company_type_id' => 'required',
+//            'name' => 'required',
+//            'Working_days' => 'required',
+//            'Overtime_policy' => 'required',
+//            'webstie' => 'required',
+////            'logo' => 'required',
+//            'facebook' => 'required',
+//            'description' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -239,7 +241,7 @@ class CompaniesController extends Controller
     }
 
     public function indexShow(Request $request){
-        $companies = Company::with(['companytype', 'companysize', 'country', 'city', 'jobs' => function ($query) {
+        $companies = Company::with(['companytype', 'companysize', 'country', 'city', 'jobs', 'skills' => function ($query) {
             $query->where('status', 1); // Lọc các công việc có trạng thái là 1
         }])->get();        $companiesdata = $companies->map(function ($company) {
             $companyType = optional($company->companytype)->name;
@@ -247,10 +249,13 @@ class CompaniesController extends Controller
             $country = optional($company->country)->name;
             $city = optional($company->city)->name;
             $job = optional($company->jobs);
+            $skills = $company->skills->pluck('name')->toArray();
+
             return [
                 'id' => $company->id,
                 'name' => $company->name,
                 'country' => $country,
+                'skills' => $skills,
                 'city' => $city,
                 'logo' => asset('uploads/images/' . $company->logo), // Assuming the logo is stored in the 'storage' folder
                 'jobs' => $job->count(),

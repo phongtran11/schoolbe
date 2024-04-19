@@ -52,7 +52,7 @@ class Company extends Model
     }
 
     public function skills() {
-        return  $this->hasMany(Companyskill::class,'company_id','id');
+        return  $this->hasOne(Companyskill::class,'company_id','id');
     }
 
 }
