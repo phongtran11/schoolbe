@@ -121,6 +121,7 @@ class CompaniesController extends Controller
 
         // Số lượng người dùng có loại 1
         $totalUsersType1 = User::where('account_type', 1)->count();
+        $totalSalary = Job::sum('salary');
 
         return response()->json([
             'success' => true,
@@ -128,7 +129,8 @@ class CompaniesController extends Controller
             'data' => [
                 'total_companies' => $totalCompanies,
                 'total_jobs' => $totalJobs,
-                'user' => $totalUsersType1
+                'user' => $totalUsersType1,
+                'total_salary' => $totalSalary
             ],
             'status_code' => 200
         ]);
