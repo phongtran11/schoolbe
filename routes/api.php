@@ -91,7 +91,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/appliedJobs', [JobsController::class, 'appliedJobs']);
 
 
-    //JobAdmin
+    //Goi y cong viec
+    Route::get('/suggest-jobs', [JobsController::class, 'suggestJobs']);
+
 
 
     Route::middleware(\App\Http\Middleware\CheckAdminRole::class)->group(function () {
@@ -99,6 +101,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::resource('Admin/country', CountriesController::class);
         Route::resource('Admin/companyType', CompanytypesController::class);
         Route::resource('Admin/companySize', CompanysizesController::class);
-        Route::Delete('logout', [AuthController::class, 'logout']);
+        Route::resource('Admin/companies', \App\Http\Controllers\Api\Admin\CompaniesController::class);
+        Route::get('/Admin/companies1/count', [\App\Http\Controllers\Api\Admin\CompaniesController::class, 'countCompaniesAndJobs']);
+
+        Route::resource('Admin/jobs', \App\Http\Controllers\Api\Admin\JobsController::class);
+
+
     });
+    Route::Delete('logout', [AuthController::class, 'logout']);
 });

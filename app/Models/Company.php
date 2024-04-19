@@ -21,10 +21,6 @@ class Company extends Model
     {
         return $this->hasMany(Location::class,'company_id','id');
     }
-    public function Location_Comapny()  : \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->belongsTo(Location_Comapny::class,'location_id','id');
-    }
 
     public function Job()  : \Illuminate\Database\Eloquent\Relations\HasMany
     {

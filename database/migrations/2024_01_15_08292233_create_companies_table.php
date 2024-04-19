@@ -18,14 +18,14 @@ return new class extends Migration
             $table->foreignId('city_id');
             $table->foreignId('company_size_id')->nullable();
             $table->foreignId('company_type_id')->nullable();
-            $table->string('name')->nullable();
-            $table->string('Working_days')->nullable();
-            $table->string('Overtime_policy')->nullable();
-            $table->string('webstie')->nullable();
-            $table->string('facebook')->nullable();
-            $table->string('logo')->nullable();
-            $table->string('address')->nullable();
-            $table->string('description')->nullable();
+            $table->text('name')->nullable();
+            $table->text('Working_days')->nullable();
+            $table->text('Overtime_policy')->nullable();
+            $table->text('webstie')->nullable();
+            $table->text('facebook')->nullable();
+            $table->text('logo')->nullable();
+            $table->text('address')->nullable();
+            $table->text('description')->nullable();
             $table->timestamps();
         });
     }

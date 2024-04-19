@@ -18,7 +18,7 @@ class CheckAdminRole
         $user = $request->user();
 
         // Kiểm tra xem người dùng có quyền là developer hoặc employer hay không
-        if ($user->account_type === 0) {
+        if ($user->account_type === 3) {
             return $next($request);
         }
 

@@ -615,6 +615,53 @@ class JobsController extends Controller
     }
 
 
+    public function suggestJobs(Request $request)
+    {
+        // Lấy người dùng hiện tại
+        $user = Auth::guard('sanctum')->user();
+
+        // Kiểm tra xem người dùng có tồn tại không
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized',
+                'status_code' => 401
+            ], 401);
+        }
+
+        // Lấy danh sách kỹ năng của người dùng
+        $userSkills = $user->profile->skills()->pluck('name')->toArray();
+
+        // Tìm các công việc có chứa ít nhất một trong các kỹ năng của người dùng
+        $suggestedJobs = Job::whereHas('skill', function ($query) use ($userSkills) {
+            $query->whereIn('name', $userSkills);
+        })->inRandomOrder()->take(5)->get();
+
+        // Format dữ liệu của các công việc gợi ý
+        $formattedJobs = $suggestedJobs->map(function ($job) {
+            return [
+                'id' => $job->id,
+                'title' => $job->title,
+                'company' => $job->company ? $job->company->name : null,
+                'salary' => $job->salary,
+                'job_type' => $job->jobtype ? $job->jobtype->pluck('name')->toArray() : null,
+                'job_city' => $job->jobcity ? $job->jobcity->pluck('name')->toArray() : null,
+                'skills' => $job->skill->pluck('name')->toArray(),
+                'address' => $job->company->address,
+                'last_date' => $job->last_date,
+                'created_at' => $job->created_at->diffForHumans(),
+            ];
+        });
+
+        // Trả về kết quả gợi ý công việc dưới dạng JSON
+        return response()->json([
+            'success' => true,
+            'message' => 'Suggested jobs retrieved successfully',
+            'data' => $formattedJobs,
+            'status_code' => 200
+        ]);
+    }
+
     public function showJob(Job $job)
     {
         // If the job does not exist, return a 404 response
