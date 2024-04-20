@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\CitiesController;
 use App\Http\Controllers\Api\Admin\CompanysizesController;
 use App\Http\Controllers\Api\Admin\CompanytypesController;
 use App\Http\Controllers\Api\Admin\CountriesController;
@@ -37,6 +38,12 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+Route::get('/countries', [CountriesController::class, 'index']);
+Route::get('/cities', [CitiesController::class, 'index']);
+Route::get('/jobtypes', [JobtypesControllerController::class, 'index']);
+Route::get('/companyType', [CompanytypesController::class, 'index']);
+Route::get('/companySize', [CompanysizesController::class, 'index']);
+
 
 //User Jobs
 Route::get('/', [JobsController::class, 'indexShow']);
@@ -100,6 +107,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware(\App\Http\Middleware\CheckAdminRole::class)->group(function () {
         Route::resource('Admin/jobtypes', JobtypesControllerController::class);
         Route::resource('Admin/country', CountriesController::class);
+        Route::resource('Admin/cties', CitiesController::class);
+
         Route::resource('Admin/companyType', CompanytypesController::class);
         Route::resource('Admin/companySize', CompanysizesController::class);
         Route::resource('Admin/companies', \App\Http\Controllers\Api\Admin\CompaniesController::class);
