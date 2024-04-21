@@ -65,7 +65,7 @@ class AboutmeController extends Controller
         $data = $validator->validated();
 
         // Update existing record or create a new one
-        $aboutme = Aboutme::updateOrCreate(
+        $aboutme = aboutme::updateOrCreate(
             ['profiles_id' => $profile_id], // Match criteria
             ['description' => $request->input('description')] // Data to update or create
         );
