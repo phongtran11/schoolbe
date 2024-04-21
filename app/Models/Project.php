@@ -14,7 +14,7 @@ class Project extends Model
 
     public function profile(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(profile::class);
+        return $this->belongsTo(Profile::class);
     }
 
 }

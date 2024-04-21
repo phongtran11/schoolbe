@@ -56,7 +56,7 @@ class User extends Authenticatable
 
     public function profile(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
-        return $this->hasOne(profile::class,'users_id','id');
+        return $this->hasOne(Profile::class,'users_id','id');
     }
 
     public function companies()
