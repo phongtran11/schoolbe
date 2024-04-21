@@ -75,7 +75,7 @@ class ProjectsController extends Controller
         }
 
         $data = $validator->validated();
-        $projects = project::create($data);
+        $projects = Project::create($data);
 
         return response()->json([
             'success'   => true,

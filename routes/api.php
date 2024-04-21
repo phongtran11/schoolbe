@@ -23,7 +23,7 @@ use App\Http\Controllers\Api\Resume\ExperiencesController;
 use App\Http\Controllers\Api\Resume\GetResumeController;
 use App\Http\Controllers\Api\Resume\profilesController;
 use App\Http\Controllers\Api\Resume\ProjectsController;
-use App\Http\Controllers\Api\Resume\skillsController;
+use App\Http\Controllers\Api\Resume\SkillsController;
 use App\Http\Controllers\Api\User\UserJobController;
 use App\Http\Middleware\CheckUserRole;
 use Illuminate\Support\Facades\Route;
@@ -60,7 +60,7 @@ Route::post('register', [AuthController::class, 'register']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::resource('profile', profilesController::class);
     Route::resource('profiles/educations', EducationController::class);
-    Route::resource('profiles/skills', skillsController::class);
+    Route::resource('profiles/skills', SkillsController::class);
     Route::resource('profiles/aboutMe', AboutmeController::class);
     Route::resource('profiles/certificates', CertificatesController::class);
     Route::resource('profiles/awards', AwardsController::class);
