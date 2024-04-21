@@ -249,13 +249,11 @@ class CompaniesController extends Controller
             $country = optional($company->country)->name;
             $city = optional($company->city)->name;
             $job = optional($company->jobs);
-            $skills = $company->skills->pluck('name')->toArray();
 
             return [
                 'id' => $company->id,
                 'name' => $company->name,
                 'country' => $country,
-                'skills' => $skills,
                 'city' => $city,
                 'logo' => asset('uploads/images/' . $company->logo), // Assuming the logo is stored in the 'storage' folder
                 'jobs' => $job->count(),
