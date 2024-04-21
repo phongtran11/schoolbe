@@ -10,4 +10,8 @@ class Certificate extends Model
     protected $table = 'certificates';
     protected $primaryKey = 'id';
     protected $guarded = [];
+    public function profile()
+    {
+        return $this->belongsTo(Profile::class,'profiles_id','id');
+    }
 }
