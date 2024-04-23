@@ -11,6 +11,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
+
 
 class JobApplicationController extends Controller
 {
@@ -32,12 +34,11 @@ class JobApplicationController extends Controller
         // Get the company ID of the authenticated user
         $companyId = $user->companies->id;
 
-        // Load only jobs that belong to the company of the authenticated user,
-
+        // Load only jobs that belong to the company of the authenticated user
         $jobs = Job::with(['applicants' => function ($query) {
             $query->withPivot('status', 'cv'); // Include pivot table fields
-        }])->where('company_id', $companyId) // Assuming the jobs table has a 'company_id' column
-        ->get();
+        }])->where('company_id', $companyId)->get();
+
         $jobsData = $jobs->map(function ($job) {
             return [
                 'id' => $job->id,
@@ -50,7 +51,7 @@ class JobApplicationController extends Controller
                         'name' => $applicant->name,
                         'email' => $applicant->email,
                         'status' => $applicant->pivot->status,
-                        'cv' => $applicant->pivot->cv ? asset('cv/' . $applicant->pivot->cv) : null, // Sửa đường dẫn để truy cập vào public/cv
+                        'cv' => $applicant->pivot->cv ? url('storage/cv/' . $applicant->pivot->cv) : null,
                     ];
                 }),
             ];
@@ -63,6 +64,7 @@ class JobApplicationController extends Controller
             'status_code' => 200
         ]);
     }
+
     /**
      * Show the form for creating a new resource.
      */

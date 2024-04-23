@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
+
 
 class JobsController extends Controller
 {
@@ -362,17 +364,17 @@ class JobsController extends Controller
             ], 409);
         }
 
-        // Check if a new CV file was uploaded
         if ($request->hasFile('cv')) {
             $cv = $request->file('cv');
             $cvFileName = time() . '_' . $cv->getClientOriginalName();
-            $cv->storePubliclyAs('cv', $cvFileName, 'public'); // Store the CV file in public/cv directory
-            $cvUrl = asset('cv/' . $cvFileName); // Get the URL of the CV from the public directory
-        } else {
+            $cv->storeAs('public/cv', $cvFileName); // Lưu file CV vào public/cv
+            $cvUrl = Storage::url('public/cv/' . $cvFileName); // Lấy URL của file CV từ thư mục storage/cv
+        }
+        else {
             // No new CV file was uploaded, attempt to use the default CV
             $defaultCv = $user->cvs()->where('is_default', true)->first();
             $cvFileName = $defaultCv ? $defaultCv->file_path : null;
-            $cvUrl = $cvFileName ? asset('cv/' . $cvFileName) : null; // Get the URL of the default CV from the public directory
+            $cvUrl = $cvFileName ? Storage::url('public/cv/' . $cvFileName) : null; // Get the URL of the default CV from the public directory
         }
 
         // Continue with the application process...
