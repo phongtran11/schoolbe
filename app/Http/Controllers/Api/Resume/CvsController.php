@@ -12,9 +12,9 @@ class CvsController extends Controller
 {
     public function store(Request $request)
     {
-        $request->validate([
-            'cv' => 'required|file|mimes:pdf', // Chỉ chấp nhận file PDF
-        ]);
+//        $request->validate([
+//            'cv' => 'required|file|mimes:pdf', // Chỉ chấp nhận file PDF
+//        ]);
 
         if ($request->hasFile('cv')) {
             $file = $request->file('cv');
