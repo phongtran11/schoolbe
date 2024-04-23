@@ -50,7 +50,7 @@ class JobApplicationController extends Controller
                         'name' => $applicant->name,
                         'email' => $applicant->email,
                         'status' => $applicant->pivot->status,
-                        'cv' => $applicant->pivot->cv ? asset('path/to/cv/' . $applicant->pivot->cv) : null,
+                        'cv' => $applicant->pivot->cv ? asset('cv/' . $applicant->pivot->cv) : null, // Sửa đường dẫn để truy cập vào public/cv
                     ];
                 }),
             ];

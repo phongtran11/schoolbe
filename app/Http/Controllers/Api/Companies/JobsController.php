@@ -366,31 +366,26 @@ class JobsController extends Controller
         if ($request->hasFile('cv')) {
             $cv = $request->file('cv');
             $cvFileName = time() . '_' . $cv->getClientOriginalName();
-            $cv->storeAs('cv', $cvFileName); // Store the CV file in storage/cv directory
+            $cv->storePubliclyAs('cv', $cvFileName, 'public'); // Store the CV file in public/cv directory
+            $cvUrl = asset('cv/' . $cvFileName); // Get the URL of the CV from the public directory
         } else {
             // No new CV file was uploaded, attempt to use the default CV
             $defaultCv = $user->cvs()->where('is_default', true)->first();
             $cvFileName = $defaultCv ? $defaultCv->file_path : null;
-        }
-
-        if (!$cvFileName) {
-            return response()->json([
-                'message' => 'Không có CV mặc định và không có CV mới được tải lên.',
-                'status_code' => 400
-            ], 400);
+            $cvUrl = $cvFileName ? asset('cv/' . $cvFileName) : null; // Get the URL of the default CV from the public directory
         }
 
         // Continue with the application process...
-        Mail::to($user->email)->send(new JobApplied($job, $user, $cvFileName));
+        Mail::to($user->email)->send(new JobApplied($job, $user, $cvUrl));
         $job->users()->attach($user->id, ['status' => 'pending', 'cv' => $cvFileName]);
 
-        return response()->json(
-            [
-                'success' => true,
-                'message' => 'Ứng tuyển công việc thành công.',
-                'status_code' => 200,
-            ], 200);
+        return response()->json([
+            'success' => true,
+            'message' => 'Ứng tuyển công việc thành công.',
+            'status_code' => 200,
+        ], 200);
     }
+
 
 
 
