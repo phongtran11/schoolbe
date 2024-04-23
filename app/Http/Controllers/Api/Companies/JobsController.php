@@ -153,6 +153,7 @@ class JobsController extends Controller
                 'success' => true,
                 'message' => 'Job and job skills created successfully.',
                 'data' => $jobData,
+                'status_code' => 200
             ]);
         } catch (\Exception $e) {
             // Rollback the transaction
@@ -385,6 +386,7 @@ class JobsController extends Controller
 
         return response()->json(
             [
+                'success' => true,
                 'message' => 'Ứng tuyển công việc thành công.',
                 'status_code' => 200,
             ], 200);
