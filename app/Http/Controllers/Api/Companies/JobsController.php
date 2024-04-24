@@ -503,7 +503,7 @@ class JobsController extends Controller
      */
     public function savedJobs(Request $request)
     {
-        $user = $request->user();
+        $user = Auth::user();
         $savedJobs = $user->favorites;
 
         $savedJobsData = $savedJobs->map(function ($job) {

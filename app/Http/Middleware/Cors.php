@@ -21,6 +21,7 @@ class Cors
         $response->headers->set('Access-Control-Allow-Headers', '*');
         $response->headers->set('Access-Control-Allow-Credentials', 'true');
 
+
         return $response;
     }
 
