@@ -3,14 +3,40 @@
 namespace App\Http\Controllers\Api\Resume;
 
 use App\Models\Profile;
+use App\Models\Cv;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Utillities\Common;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\URL;
 
 class ProfilesController extends Controller
 {
+
+    public function download_cv() {
+        $user = User::where("id", auth()->user()->id)->firstOrFail();
+
+        $cv=  Cv::where('users_id', $user->id)->where('is_default', 1)->firstOrFail();
+
+        $fileName = $cv->file_path;
+        $filePath = public_path('cvs/' . $fileName); 
+
+        if (file_exists($filePath)) {
+            $fileContent = file_get_contents($filePath);
+
+            return Response::make($fileContent, 200, [
+                'Content-Disposition' => 'attachment; filename="'. $fileName. '"',
+                'Content-Type' => 'application/octet-stream',
+            ]);
+        } else {
+            abort(404, 'File not found');
+        }
+
+        
+    }
+
     /**
      * Display a listing of the resource.
      */

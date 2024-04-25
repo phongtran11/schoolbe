@@ -46,7 +46,7 @@ Route::get('/companySize', [CompanysizesController::class, 'index']);
 
 
 //User Jobs
-Route::get('/', [JobsController::class, 'indexShow']);
+Route::get('/list-jobs', [JobsController::class, 'indexShow']);
 Route::get('/jobs/{job}', [JobsController::class, 'showJob']);
 Route::get('/search', [JobsController::class, 'search']);
 Route::get('/companies1', [CompaniesController::class, 'indexShow']);
@@ -58,6 +58,8 @@ Route::post('login', [AuthController::class, 'login']);
 Route::post('register', [AuthController::class, 'register']);
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/download-cv', [profilesController::class, 'download_cv']);
+
     Route::resource('profile', profilesController::class);
     Route::resource('profiles/educations', EducationController::class);
     Route::resource('profiles/skills', SkillsController::class);
